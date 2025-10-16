@@ -3,7 +3,8 @@ import './App.css'
 
 function App() {
     const [title, setTitle] = useState('');
-    const [bottomTest, setBottomText] = useState('');
+    const [bottomText, setBottomText] = useState('');
+
     useEffect(() => {
         const getTitle = async () => {
             const res = await fetch('/api/title');
@@ -15,12 +16,14 @@ function App() {
         }
         setTitle(getTitle());
         setBottomText(getBottomText());
+
+        setTitle(getTitle());
     }, [])
 
     return (
         <>
             <h1>{title}</h1>
-            <p>{bottomTest}</p>
+            <p>{bottomText}</p>
         </>
     )
 }
