@@ -1,0 +1,14 @@
+[tasks.client]
+run = """
+cd bioguessr-client
+bun run dev
+"""
+
+[tasks.server]
+run = """
+cd bioguessr-server
+bun server.js
+"""
+
+[tasks.dev]
+depends = ["server", "client"]
