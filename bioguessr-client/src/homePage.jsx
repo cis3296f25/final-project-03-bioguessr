@@ -15,21 +15,38 @@ function HomePage() {
         const buttonData = await buttonRes.text();
         setButtonText(buttonData);
 
-        const rulesRes = await fetch('/api/rulesButton');
-        const rulesData = await rulesRes.text();
-        setRulesText(rulesData);
+                const rulesRes = await fetch('/api/rulesButton');
+                const rulesData = await rulesRes.text();
+                setRulesText(rulesData);
 
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const handlePlayClick = () => {
+        navigate('/play');
     };
 
-    fetchData(); 
-  }, []);
+    const handleRulesClick = () => {
+        setShowRules(true);
+    };
+    return (
+        <>
+            <h1>{title}</h1>
+            <p>{bottomText}</p>
+            <button onClick={handlePlayClick}>
+                {buttonText}
+            </button>
+            <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
+                {rulesText}
+            </button>
 
-  const handlePlayClick = () => {
-    navigate('/play'); 
-  };
+            {showRules && (
+                <div className="modal-overlay" onClick={() => setShowRules(false)}>
 
   const handleRulesClick = () => {
     setShowRules(true);
@@ -45,27 +62,27 @@ function HomePage() {
         {rulesText}
       </button>
 
-      {showRules && (
-        <div className="modal-overlay" onClick={() => setShowRules(false)}>
-          
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>How To Play</h2>
-            <p>You will be shown a picture of an animal along with it's scientific name. 
-            </p>
-            <p>
-                Your job is to correctly identify the region(s) that the animal can be found in by
-                selecting a country from the dropdown menu provided. 
-            </p>
-                
-            <p>Correct guesses will be rewarded
-                with points, while incorrect guesses will not reward any points.
-            </p>
-            <button onClick={() => setShowRules(false)}>Close</button>
+        {showRules && (
+          <div className="modal-overlay" onClick={() => setShowRules(false)}>
+            
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>How To Play</h2>
+              <p>You will be shown a picture of an animal along with it's scientific name. 
+              </p>
+              <p>
+                  Your job is to correctly identify the region(s) that the animal can be found in by
+                  selecting a country from the dropdown menu provided. 
+              </p>
+                  
+              <p>Correct guesses will be rewarded
+                  with points, while incorrect guesses will not reward any points.
+              </p>
+              <button onClick={() => setShowRules(false)}>Close</button>
+            </div>
           </div>
-        </div>
-      )}
-    </>
-  );
+            )}
+        </>
+    );
 }
 
 export default HomePage;
