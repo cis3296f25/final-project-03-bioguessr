@@ -1,29 +1,29 @@
-# Project Name
-Put here a short paragraph describing your project. 
-Adding an screenshot or a mockup of your application in action would be nice.  
+# BioGuessr
+A web-based game inspired by the popular web-game GeoGuessr and its many offspring (FoodGuessr, etc.). Bioguessr will involve the user being shown an image of an animal and they will have to guess the origin of the animal. For animals with multiple origins, a guess is considered correct if it matches any of its country of origins. Wrong answers will provide the user with more hints, like the animal's scientific name, and deduct total possible points until they run out of guesses. There will also be different game modes that the user can select from, such as matching the name of an animal to an image and a hard mode where no hints are given and the player must guess based off of the image alone. This project is intended for all internet users who enjoy the “Guessr” archetype of games and is a new take on the archetype.
 
-![This is a screenshot.](images.png)
 # How to run
-Provide here instructions on how to use your application.   
 - Download the latest binary from the Release section on the right on GitHub.  
 - On the command line uncompress using
 ```
 tar -xzf  
 ```
-- On the command line run with
+- to run the client:
 ```
-./hello
+cd bioguessr-client
+bun run dev
 ```
-- You will see Hello World! on your terminal. 
-
+- to run the server:
+```
+cd bioguessr-server
+bun server.js
+```
 # How to contribute
-Follow this project board to know the latest status of the project: [http://...]([http://...])  
+Follow this project board to know the latest status of the project: [https://github.com/orgs/cis3296f25/projects/54](https://github.com/orgs/cis3296f25/projects/54)
 
 ### How to build
-- Project Board: https://github.com/orgs/cis3296f25/projects/54
-- Use this github repository: ... 
-- Specify what branch to use for a more stable release or for cutting edge development.  
-- Use InteliJ 11
-- Specify additional library to download if needed 
-- What file and target to compile and run. 
-- What is expected to happen when the app start. 
+- install Bun from [bun.com](https://bun.com/) 
+- make sure to run
+```
+bun install
+```
+in both `bioguessr-client` and `bioguessr-server`.
