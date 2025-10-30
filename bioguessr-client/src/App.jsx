@@ -1,30 +1,15 @@
-import { useState, useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom';
 import './App.css'
+import HomePage from './homePage.jsx';
+import PlayPage from './playPage.jsx';
 
 function App() {
-    const [title, setTitle] = useState('');
-    const [bottomText, setBottomText] = useState('');
-
-    useEffect(() => {
-        const getTitle = async () => {
-            const res = await fetch('/api/title');
-            return await res.text();
-        }
-        const getBottomText = async () => {
-            const res = await fetch('/api/bottomText');
-            return await res.text();
-        }
-        setTitle(getTitle());
-        setBottomText(getBottomText());
-
-        setTitle(getTitle());
-    }, [])
-
     return (
-        <>
-            <h1>{title}</h1>
-            <p>{bottomText}</p>
-        </>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      
+      <Route path="/play" element={<PlayPage />} />
+    </Routes>
     )
 }
 

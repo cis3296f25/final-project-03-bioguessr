@@ -19,6 +19,8 @@
 }
 
 @keyframes logo-spin {
+
+  
   from {
     transform: rotate(0deg);
   }
@@ -39,4 +41,44 @@
 
 .read-the-docs {
   color: #888;
+}
+
+
+.modal-overlay {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #2f2f2f; 
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 90%;
+  width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.87); 
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  text-align: left;
+}
+
+.modal-content p,
+.modal-content li {
+  text-align: left;
+  line-height: 1.6;
+}
+
+.modal-content button {
+  float: right;
+  margin-top: 1rem;
 }
