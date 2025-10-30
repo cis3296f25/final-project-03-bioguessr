@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 
 function HomePage() {
-  const [title, setTitle] = useState('');
-  const [bottomText, setBottomText] = useState('');
   const [buttonText, setButtonText] = useState('');
   const [showRules, setShowRules] = useState(false);
   const [rulesText, setRulesText] = useState('');
@@ -13,14 +11,6 @@ function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const titleRes = await fetch('/api/title');
-        const titleData = await titleRes.text();
-        setTitle(titleData);
-
-        const bottomTextRes = await fetch('/api/bottomText');
-        const bottomTextData = await bottomTextRes.text();
-        setBottomText(bottomTextData);
-
         const buttonRes = await fetch('/api/playButton');
         const buttonData = await buttonRes.text();
         setButtonText(buttonData);
@@ -46,8 +36,8 @@ function HomePage() {
 };
   return (
     <>
-      <h1>{title}</h1>
-      <p>{bottomText}</p>
+      <h1>BioGuessr</h1>
+      <p>How well do you know Biology?</p>
       <button onClick={handlePlayClick}>
         {buttonText}
       </button>
