@@ -16,7 +16,12 @@ async function getRandomAnimal() {
   if (!items || items.length === 0) return null;
 
   const randomIndex = Math.floor(Math.random() * items.length);
-  return items[randomIndex];
+  const item = items[randomIndex];
+
+  return {
+    name: item.name.S,
+    imageUrl: item.image_url.S,
+  };
 }
 
 app.get("/api/play", async (req, res) => {
