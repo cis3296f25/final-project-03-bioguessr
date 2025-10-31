@@ -34,33 +34,17 @@ function HomePage() {
     const handleRulesClick = () => {
         setShowRules(true);
     };
-    return (
-        <>
-            <h1>{title}</h1>
-            <p>{bottomText}</p>
-            <button onClick={handlePlayClick}>
-                {buttonText}
-            </button>
-            <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
-                {rulesText}
-            </button>
-
-            {showRules && (
-                <div className="modal-overlay" onClick={() => setShowRules(false)}>
-
-  const handleRulesClick = () => {
-    setShowRules(true);
-};
   return (
     <>
-      <h1>BioGuessr</h1>
-      <p>How well do you know Biology?</p>
-      <button onClick={handlePlayClick}>
-        {buttonText}
-      </button>
-      <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
-        {rulesText}
-      </button>
+      <div className='background'>
+        <h1>BioGuessr</h1>
+        <p>How well do you know Biology?</p>
+        <button onClick={handlePlayClick}>
+          {buttonText}
+        </button>
+        <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
+          {rulesText}
+        </button>
 
         {showRules && (
           <div className="modal-overlay" onClick={() => setShowRules(false)}>
@@ -80,9 +64,9 @@ function HomePage() {
               <button onClick={() => setShowRules(false)}>Close</button>
             </div>
           </div>
-            )}
-        </>
-    );
-}
-
+        )}
+      </div>
+    </>
+  );
+};
 export default HomePage;
