@@ -34,22 +34,9 @@ function HomePage() {
     const handleRulesClick = () => {
         setShowRules(true);
     };
-    return (
-        <>
-            <h1>{title}</h1>
-            <p>{bottomText}</p>
-            <button onClick={handlePlayClick}>
-                {buttonText}
-            </button>
-            <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
-                {rulesText}
-            </button>
 
-            {showRules && (
-                <div className="modal-overlay" onClick={() => setShowRules(false)}>
-
-  const handleRulesClick = () => {
-    setShowRules(true);
+    const handleRulesClick = () => {
+        setShowRules(true);
 };
   return (
     <>
