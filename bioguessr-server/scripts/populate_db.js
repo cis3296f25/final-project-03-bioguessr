@@ -7,11 +7,10 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import fs from "fs";
 
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
-  region: "us-east-1",
-  credentials: {
-    accessKeyId: "fake",
-    secretAccessKey: "fake",
+   region: process.env.AWS_REGION,
+   credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
