@@ -1,72 +1,58 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
+import PrimaryButton from './components/PrimaryButton.jsx';
+import Background from './components/Background.jsx';
+import RulesModal from './components/RulesModal.jsx';
 
-function HomePage() {
-  const [buttonText, setButtonText] = useState('');
+const API = import.meta.env.VITE_API_BASE || '';
+
+export default function HomePage() {
+  const [buttonText, setButtonText] = useState('Play');
+  const [rulesText, setRulesText] = useState('How to Play');
   const [showRules, setShowRules] = useState(false);
-  const [rulesText, setRulesText] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        const buttonRes = await fetch('/api/playButton');
-        const buttonData = await buttonRes.text();
-        setButtonText(buttonData);
+        const [btnRes, rulesRes] = await Promise.all([
+          fetch(`${API}/api/playButton`),
+          fetch(`${API}/api/rulesButton`),
+        ]);
+        if (!cancelled) {
+          if (btnRes.ok)   setButtonText(await btnRes.text());
+          if (rulesRes.ok) setRulesText(await rulesRes.text());
+        }
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-                const rulesRes = await fetch('/api/rulesButton');
-                const rulesData = await rulesRes.text();
-                setRulesText(rulesData);
+  const handlePlayClick = () => navigate('/play');
 
-            } catch (error) {
-                console.error("Failed to fetch data:", error);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    const handlePlayClick = () => {
-        navigate('/play');
-    };
-
-    const handleRulesClick = () => {
-        setShowRules(true);
-    };
   return (
-    <>
-      <div className='background'>
-        <h1>BioGuessr</h1>
-        <p>How well do you know Biology?</p>
-        <button onClick={handlePlayClick}>
-          {buttonText}
-        </button>
-        <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
-          {rulesText}
-        </button>
+    <Background>
+      <h1>BioGuessr</h1>
+      <p>How well do you know Biology?</p>
 
-        {showRules && (
-          <div className="modal-overlay" onClick={() => setShowRules(false)}>
-            
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>How To Play</h2>
-              <p>You will be shown a picture of an animal along with it's scientific name. 
-              </p>
-              <p>
-                  Your job is to correctly identify the region(s) that the animal can be found in by
-                  selecting a country from the dropdown menu provided. 
-              </p>
-                  
-              <p>Correct guesses will be rewarded
-                  with points, while incorrect guesses will not reward any points.
-              </p>
-              <button onClick={() => setShowRules(false)}>Close</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+      <PrimaryButton onClick={handlePlayClick}>
+        {buttonText}
+      </PrimaryButton>
+
+      <PrimaryButton onClick={() => setShowRules(true)} style={{ marginLeft: 10 }}>
+        {rulesText}
+      </PrimaryButton>
+
+      <RulesModal open={showRules} onClose={() => setShowRules(false)}>
+        <h2>How To Play</h2>
+        <p>You will be shown a picture of an animal along with its scientific name.</p>
+        <p>Your job is to select a country where the animal is found. Some animals have multiple valid origins.</p>
+        <p>Correct guesses earn points; incorrect guesses do not.</p>
+      </RulesModal>
+    </Background>
   );
-};
-export default HomePage;
+}
