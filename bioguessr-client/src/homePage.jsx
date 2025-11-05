@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import PrimaryButton from './components/PrimaryButton.jsx';
-import Background from './components/Background.jsx';
 import RulesModal from './components/RulesModal.jsx';
 
 const API = import.meta.env.VITE_API_BASE || '';
 
 export default function HomePage() {
   const [buttonText, setButtonText] = useState('Play');
-  const [rulesText, setRulesText] = useState('How to Play');
+  const [rulesText, setRulesText] = useState('How To Play');
   const [showRules, setShowRules] = useState(false);
   const navigate = useNavigate();
 
@@ -26,26 +25,23 @@ export default function HomePage() {
           if (rulesRes.ok) setRulesText(await rulesRes.text());
         }
       } catch {
-        /* keep defaults */
+        // keep defaults
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  const handlePlayClick = () => navigate('/play');
-
   return (
-    <Background>
-      <h1>BioGuessr</h1>
-      <p>How well do you know Biology?</p>
+    <section className="hero">
+      <div className="hero-content">
+        <h1>BioGuessr</h1>
+        <p>How well do you know Biology?</p>
 
-      <PrimaryButton onClick={handlePlayClick}>
-        {buttonText}
-      </PrimaryButton>
-
-      <PrimaryButton onClick={() => setShowRules(true)} style={{ marginLeft: 10 }}>
-        {rulesText}
-      </PrimaryButton>
+        <div className="buttons">
+          <PrimaryButton onClick={() => navigate('/play')}>{buttonText}</PrimaryButton>
+          <PrimaryButton onClick={() => setShowRules(true)}>{rulesText}</PrimaryButton>
+        </div>
+      </div>
 
       <RulesModal open={showRules} onClose={() => setShowRules(false)}>
         <h2>How To Play</h2>
@@ -53,6 +49,6 @@ export default function HomePage() {
         <p>Your job is to select a country where the animal is found. Some animals have multiple valid origins.</p>
         <p>Correct guesses earn points; incorrect guesses do not.</p>
       </RulesModal>
-    </Background>
+    </section>
   );
 }
