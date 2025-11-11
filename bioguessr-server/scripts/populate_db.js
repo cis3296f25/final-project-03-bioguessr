@@ -34,7 +34,7 @@ try {
 }
 
 const data = JSON.parse(
-  fs.readFileSync("./animal_data/animals_with_images.json", "utf8"),
+  fs.readFileSync("./animal_data/updated_animals_with_images.json", "utf8"),
 );
 
 for (const item of data) {
@@ -46,6 +46,7 @@ for (const item of data) {
         image_url: item.image_url,
         taxonomy: item.taxonomy,
         characteristics: item.characteristics,
+        countries: item.countries,
       },
       { removeUndefinedValues: true },
     );
