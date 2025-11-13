@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import CountryDropdown from './FuzzySearch.jsx'
 
 // Demo data for now. Replace with API later.
 const DEMO_ANIMALS = [
@@ -116,15 +117,9 @@ export default function PlayPage() {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <select
-                            value={guess}
-                            onChange={e => setGuess(e.target.value)}
-                            disabled={locked}
-                            style={{ padding: 10, fontSize: 16 }}
-                        >
-                            <option value="" disabled>Choose an animal…</option>
-                            {options.map(name => <option key={name} value={name}>{name}</option>)}
-                        </select>
+                        <CountryDropdown setGuess={setGuess}>
+
+                        </CountryDropdown>
 
                         <button
                             onClick={submitGuess}
