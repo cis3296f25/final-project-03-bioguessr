@@ -1,12 +1,17 @@
 import express from "express";
+import dotenv from "dotenv";
+
 const { DynamoDBClient, ScanCommand } = require("@aws-sdk/client-dynamodb");
 const app = express();
+dotenv.config();
 const port = 3000;
 
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
   region: "us-east-1",
-  credentials: { accessKeyId: "fake", secretAccessKey: "fake" },
+  credentials: {
+    accessKeyId: process.env.ACCESS_KEY_ID,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY,
+  },
 });
 
 async function getRandomAnimal() {

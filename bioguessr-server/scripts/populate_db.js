@@ -5,13 +5,14 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import fs from "fs";
+import dotenv from "dotenv";
 
+dotenv.config();
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
   region: "us-east-1",
   credentials: {
-    accessKeyId: "fake",
-    secretAccessKey: "fake",
+    accessKeyId: process.env.ACCESS_KEY_ID,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY,
   },
 });
 
