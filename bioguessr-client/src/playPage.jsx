@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import CountryDropdown from './FuzzySearch.jsx'
+import CountryDropdown from './CountryDropdown.jsx'
 
 // Demo data for now. Replace with API later.
 const DEMO_ANIMALS = [
