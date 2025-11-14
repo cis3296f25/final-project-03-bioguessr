@@ -44,7 +44,8 @@ for (const item of data) {
         scientific_name: item.taxonomy?.scientific_name,
         image_url: item.image_url,
         taxonomy: item.taxonomy,
-        characteristics: item.characteristics,
+        country: item.countries,
+        characteristics: item.characteristics
       },
       { removeUndefinedValues: true },
     );
