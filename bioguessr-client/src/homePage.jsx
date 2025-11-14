@@ -1,0 +1,52 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './App.css';
+
+function HomePage() {
+    const [showRules, setShowRules] = useState(false);
+    const navigate = useNavigate();
+
+    const handlePlayClick = () => {
+        navigate('/play');
+    };
+
+    const handleRulesClick = () => {
+        setShowRules(true);
+    };
+
+    return (
+        <>
+            <div className='background'>
+                <h1>BioGuessr</h1>
+                <p>How well do you know Biology?</p>
+                <button onClick={handlePlayClick}>
+                    "Play"
+                </button>
+                <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
+                    "Rules"
+                </button>
+
+                {showRules && (
+                    <div className="modal-overlay" onClick={() => setShowRules(false)}>
+
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h2>How To Play</h2>
+                            <p>You will be shown a picture of an animal along with it's scientific name.
+                            </p>
+                            <p>
+                                Your job is to correctly identify the region(s) that the animal can be found in by
+                                selecting a country from the dropdown menu provided.
+                            </p>
+
+                            <p>Correct guesses will be rewarded
+                                with points, while incorrect guesses will not reward any points.
+                            </p>
+                            <button onClick={() => setShowRules(false)}>Close</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+};
+export default HomePage;
