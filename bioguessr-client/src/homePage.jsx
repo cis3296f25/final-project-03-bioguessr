@@ -26,6 +26,9 @@ function HomePage() {
 
         fetchData();
     }, []);
+    const handleDailyClick = () => {
+      navigate('/daily');
+    };
 
     const handlePlayClick = () => {
         navigate('/play');
@@ -41,6 +44,9 @@ function HomePage() {
         <p>How well do you know Biology?</p>
         <button onClick={handlePlayClick}>
           {buttonText}
+        </button>
+        <button onClick={handleDailyClick} style={{ marginLeft: '10px' }}>
+          {"Daily"}
         </button>
         <button onClick={handleRulesClick} style={{ marginLeft: '10px' }}>
           {rulesText}
