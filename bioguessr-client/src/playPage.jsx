@@ -98,11 +98,11 @@ export default function PlayPage() {
   }
 
   function submitGuess() {
-    if (!current || !guess || locked) return;
+    if (!current || !guess?.trim() || locked) return;
 
-    // NOTE: Current game rule compares the user guess to the ANIMAL NAME.
-    // (If you later switch to “guessing a country”, change this check.)
-    const correct = guess.trim().toLowerCase() === String(current.name || "").toLowerCase();
+    // Current rule: compare to ANIMAL NAME (change later if you swap to countries)
+    const correct =
+      guess.trim().toLowerCase() === String(current.name || "").toLowerCase();
 
     if (correct) {
       setScore((s) => s + 100);
@@ -111,15 +111,24 @@ export default function PlayPage() {
       return;
     }
 
-    // Incorrect guess flow
-    setWrongGuesses((n) => {
-      const next = n + 1;
-      if (isEasy && next >= 3) {
-        setLocked(true);
-        setFeedback(`Not quite — it was ${current.name}.`);
-      }
-      return next;
-    });
+    // Wrong answer handling
+    if (isEasy) {
+      // In Easy mode, allow up to 3 wrong attempts with hints
+      setWrongGuesses((n) => {
+        const next = n + 1;
+        if (next >= 3) {
+          setLocked(true);
+          setFeedback(`Not quite — it was ${current.name}.`);
+        } else {
+          setFeedback("Try again!");
+        }
+        return next;
+      });
+    } else {
+      // In Normal mode, lock immediately after one guess (right or wrong)
+      setLocked(true);
+      setFeedback(`Not quite — it was ${current.name}.`);
+    }
   }
 
   function nextRound() {
@@ -250,7 +259,7 @@ export default function PlayPage() {
 
             <button
               onClick={submitGuess}
-              disabled={!guess || locked}
+              disabled={!guess?.trim() || locked}
               style={{ padding: 12, fontSize: 16, fontWeight: "bold" }}
             >
               Submit Guess
@@ -258,8 +267,7 @@ export default function PlayPage() {
 
             <button
               onClick={nextRound}
-              disabled={!locked && (!isEasy || wrongGuesses < 3)}
-              // In Normal mode, let them move on after any guess lock; in Easy, after 3 wrong it locks
+              disabled={!locked}
               style={{ padding: 12, fontSize: 16 }}
             >
               Next Round
