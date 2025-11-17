@@ -1,0 +1,45 @@
+ChatGPT said:
+
+Yes—as long as you point the server at DynamoDB and the table is populated, everything keeps working. Here’s the exact flow that works:
+
+1) Start DynamoDB (Docker)
+cd C:\Users\97748\final-project-03-bioguessr\bioguessr-server
+docker compose up -d
+
+
+Quick check:
+
+docker ps   # should show amazon/dynamodb-local
+
+2) Populate the table (one-time per empty DB)
+$env:DYNAMO_ENDPOINT="http://localhost:8000"
+$env:AWS_REGION="us-east-1"
+$env:ANIMALS_TABLE="Animals"
+bun run scripts/populate_db.js
+
+
+You should see something like “Inserted N items”.
+
+3) Run the server against DynamoDB
+$env:USE_DYNAMO="1"
+$env:DYNAMO_ENDPOINT="http://localhost:8000"
+$env:AWS_REGION="us-east-1"
+$env:ANIMALS_TABLE="Animals"
+bun server.js
+
+
+Sanity check:
+
+curl http://localhost:3000/api/play
+
+
+Should return JSON with name, imageUrl, and characteristics.
+
+4) Run the client
+cd C:\Users\97748\final-project-03-bioguessr\bioguessr-client
+bun install
+bun run dev
+
+
+Open the Local URL (usually http://localhost:5173
+). Your existing
