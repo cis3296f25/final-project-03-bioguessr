@@ -7,11 +7,10 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import fs from "fs";
 
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
-  region: "us-east-1",
-  credentials: {
-    accessKeyId: "fake",
-    secretAccessKey: "fake",
+   region: process.env.AWS_REGION,
+   credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -45,7 +44,8 @@ for (const item of data) {
         scientific_name: item.taxonomy?.scientific_name,
         image_url: item.image_url,
         taxonomy: item.taxonomy,
-        characteristics: item.characteristics,
+        country: item.countries,
+        characteristics: item.characteristics
       },
       { removeUndefinedValues: true },
     );
