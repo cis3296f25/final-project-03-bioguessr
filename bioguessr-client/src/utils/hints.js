@@ -1,9 +1,13 @@
 // bioguessr-client/src/utils/hints.js
 
-// Safe getter
+// ---------- Core helpers ----------
+
+// Safe getter: get(obj, "characteristics.location", "default")
 function get(obj, path, dflt = "") {
   try {
-    const out = path.split(".").reduce((o, k) => (o && o[k] != null ? o[k] : undefined), obj);
+    const out = path
+      .split(".")
+      .reduce((o, k) => (o && o[k] != null ? o[k] : undefined), obj);
     if (out == null) return dflt;
     return typeof out === "string" ? out.trim() : out;
   } catch {
@@ -20,57 +24,124 @@ function pickFirst(obj, paths) {
   return "";
 }
 
-// 1) Distinctive feature → fallbacks (diet → habitat → prey → lifestyle → slogan)
+// Normalize countries array into a clean string[] list
+function normalizeCountries(animal) {
+  const raw = get(animal, "countries", []);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((c) => (typeof c === "string" ? c.trim() : ""))
+    .filter((c) => c.length > 0);
+}
+
+// Take a long habitat string like
+// "deserts, high veld, floodplains, grassland, savanna, farms, marshes, ponds, lakes"
+// and shrink it to e.g. "deserts and high veld"
+function shortenHabitat(habitat, maxItems = 2) {
+  if (!habitat || typeof habitat !== "string") return "";
+  const parts = habitat
+    .split(/[;,]/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+
+  const slice = parts.slice(0, maxItems);
+  if (slice.length === 2) {
+    return `${slice[0]} and ${slice[1]}`;
+  }
+  return slice.join(", ");
+}
+
+// ---------- MAIN HINT: location first, lots of fallbacks ----------
+
 export function getFeatureHint(animal) {
-  // Try both nested and root, and a few name variants we’ve seen in different datasets
+  if (!animal) {
+    return "No data for this animal yet.";
+  }
+
+  // 1) MAIN: location / region
+  const region = pickFirst(animal, [
+    "characteristics.location",
+    "location",
+    "region",
+  ]);
+  if (region) {
+    return `Location – ${region}.`;
+  }
+
+  // 2) HABITAT fallback
+  const rawHabitat = pickFirst(animal, ["characteristics.habitat", "habitat"]);
+  const habitatShort = shortenHabitat(rawHabitat);
+  if (habitatShort) {
+    return `Habitat – ${habitatShort}.`;
+  }
+
+  // 3) DISTINCTIVE FEATURE
   const feature = pickFirst(animal, [
     "characteristics.most_distinctive_feature",
     "characteristics.distinctive_feature",
     "most_distinctive_feature",
     "distinctive_feature",
   ]);
+  if (feature) {
+    return `Most distinctive feature – ${feature}.`;
+  }
 
-  if (feature) return `Most distinctive feature: ${feature}`;
-
+  // 4) DIET
   const diet = pickFirst(animal, ["characteristics.diet", "diet"]);
-  if (diet) return `Diet: ${diet}`;
+  if (diet) {
+    return `Diet – ${diet}.`;
+  }
 
-  const habitat = pickFirst(animal, ["characteristics.habitat", "habitat"]);
-  if (habitat) return `Habitat: ${habitat}`;
+  // 5) LIFESTYLE
+  const lifestyle = pickFirst(animal, [
+    "characteristics.lifestyle",
+    "lifestyle",
+  ]);
+  if (lifestyle) {
+    return `Lifestyle – ${lifestyle}.`;
+  }
 
-  const prey = pickFirst(animal, ["characteristics.prey", "prey"]);
-  if (prey) return `Typical prey: ${prey}`;
-
-  const lifestyle = pickFirst(animal, ["characteristics.lifestyle", "lifestyle"]);
-  if (lifestyle) return `Lifestyle: ${lifestyle}`;
-
+  // 6) SLOGAN
   const slogan = pickFirst(animal, ["characteristics.slogan", "slogan"]);
-  if (slogan) return slogan;
+  if (slogan) {
+    return slogan;
+  }
 
-  return "No feature hint available";
+  // 7) Truly nothing
+  return "No descriptive information available.";
 }
 
-// 2) Weight → fallbacks (top_speed → height/length → location/region)
+// ---------- Extra info (currently unused in Easy mode) ----------
+
 export function getWeightHint(animal) {
+  if (!animal) {
+    return "Extra info unavailable.";
+  }
+
   const weight = pickFirst(animal, ["characteristics.weight", "weight"]);
-  if (weight) return `Weight: ${weight}`;
+  if (weight) return `Typical weight: ${weight}.`;
 
-  const speed = pickFirst(animal, ["characteristics.top_speed", "top_speed", "speed"]);
-  if (speed) return `Top speed: ${speed}`;
+  const length = pickFirst(animal, [
+    "characteristics.length",
+    "length",
+    "size",
+  ]);
+  if (length) return `Typical size: ${length}.`;
 
-  const height = pickFirst(animal, ["characteristics.height", "height"]);
-  if (height) return `Height: ${height}`;
+  const speed = pickFirst(animal, [
+    "characteristics.top_speed",
+    "top_speed",
+    "speed",
+  ]);
+  if (speed) return `Top speed: ${speed}.`;
 
-  const length = pickFirst(animal, ["characteristics.length", "length", "size"]);
-  if (length) return `Length/size: ${length}`;
-
-  const location = pickFirst(animal, ["characteristics.location", "location", "region"]);
-  if (location) return `Typical region: ${location}`;
-
-  return "No weight/speed hint available";
+  return "Extra info unavailable.";
 }
 
-// (Optional) If you later need the countries array:
+// ---------- Optional helper: raw countries array ----------
+
 export function extractCountries(animal) {
-  return get(animal, "countries", []);
+  return normalizeCountries(animal);
 }

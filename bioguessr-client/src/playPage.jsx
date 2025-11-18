@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
-import { getFeatureHint, getWeightHint } from "./utils/hints.js";
+import { getFeatureHint } from "./utils/hints.js";
 
 // Only for the round counter UI (your server still supplies the animal)
 const DEMO_TOTAL_ROUNDS = 4;
@@ -11,6 +11,24 @@ const DEMO_TOTAL_ROUNDS = 4;
 function useIsEasyMode() {
   const { search } = useLocation();
   return new URLSearchParams(search).get("mode") === "easy";
+}
+
+// Helper: normalize countries list from the animal object
+function getCountryList(animal) {
+  if (!animal || !animal.countries) return [];
+  const raw = animal.countries;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((c) => (typeof c === "string" ? c.trim() : ""))
+    .filter(Boolean);
+}
+
+// Helper: pretty string for revealing countries
+function formatCountryAnswer(countries) {
+  if (!countries || countries.length === 0) return "";
+  if (countries.length === 1) return countries[0];
+  if (countries.length <= 3) return countries.join(", ");
+  return countries.slice(0, 3).join(", ") + ", ...";
 }
 
 export default function PlayPage() {
@@ -28,6 +46,22 @@ export default function PlayPage() {
 
   const totalRounds = DEMO_TOTAL_ROUNDS;
   const gameOver = round > totalRounds;
+
+  // Derived: list of valid countries + label for revealing
+  const countryList = useMemo(() => getCountryList(current), [current]);
+  const answerCountryDisplay = useMemo(
+    () => formatCountryAnswer(countryList),
+    [countryList]
+  );
+
+  const fallbackRegion =
+    current?.characteristics?.location ||
+    current?.location ||
+    current?.name ||
+    "Unknown";
+
+  // Shown in "Country / Region" field + wrong-answer feedback
+  const answerLabel = answerCountryDisplay || fallbackRegion;
 
   // Load animal for this round
   useEffect(() => {
@@ -61,15 +95,10 @@ export default function PlayPage() {
     };
   }, [round]);
 
-  // Easy-mode hints from the current animal (after wrong guesses)
+  // Easy-mode hint from the current animal (after first wrong guess)
   const hint1 = useMemo(() => {
     if (!isEasy || !current || wrongGuesses < 1) return null;
-    return getFeatureHint(current); // most_distinctive_feature → diet → habitat → prey → lifestyle → slogan
-  }, [isEasy, current, wrongGuesses]);
-
-  const hint2 = useMemo(() => {
-    if (!isEasy || !current || wrongGuesses < 2) return null;
-    return getWeightHint(current); // weight → top_speed → height/length → location
+    return getFeatureHint(current);
   }, [isEasy, current, wrongGuesses]);
 
   if (gameOver) {
@@ -100,34 +129,55 @@ export default function PlayPage() {
   function submitGuess() {
     if (!current || !guess?.trim() || locked) return;
 
-    // Current rule: compare to ANIMAL NAME (change later if you swap to countries)
-    const correct =
-      guess.trim().toLowerCase() === String(current.name || "").toLowerCase();
+    const normalizedGuess = guess.trim().toLowerCase();
+    let correct = false;
+
+    // PRIMARY RULE: compare guess to any of the animal's countries
+    if (countryList.length > 0) {
+      correct = countryList.some(
+        (c) => c.trim().toLowerCase() === normalizedGuess
+      );
+    } else {
+      // Fallback: compare to animal name (should rarely happen)
+      correct =
+        normalizedGuess === String(current.name || "").trim().toLowerCase();
+    }
 
     if (correct) {
+      const userGuessClean = guess.trim();
       setScore((s) => s + 100);
       setLocked(true);
-      setFeedback("Correct! +100");
+      setFeedback(
+        countryList.length > 0
+          ? `Correct! You guessed ${userGuessClean}. (+100)`
+          : "Correct! +100"
+      );
       return;
     }
 
     // Wrong answer handling
     if (isEasy) {
-      // In Easy mode, allow up to 3 wrong attempts with hints
+      // Easy mode: 2 guesses total, 1 hint after the first wrong guess
       setWrongGuesses((n) => {
         const next = n + 1;
-        if (next >= 3) {
+
+        if (next >= 2) {
           setLocked(true);
-          setFeedback(`Not quite — it was ${current.name}.`);
+          setFeedback(
+            `Not quite — this animal can be found in: ${answerLabel}.`
+          );
         } else {
-          setFeedback("Try again!");
+          setFeedback("Not quite — here's a habitat hint!");
         }
+
         return next;
       });
     } else {
       // In Normal mode, lock immediately after one guess (right or wrong)
       setLocked(true);
-      setFeedback(`Not quite — it was ${current.name}.`);
+      setFeedback(
+        `Not quite — this animal can be found in: ${answerLabel}.`
+      );
     }
   }
 
@@ -140,7 +190,7 @@ export default function PlayPage() {
     navigate("/");
   }
 
-  const imgSrc = current.image_url || current.imageUrl || ""; // server normalizes these
+  const imgSrc = current.image_url || current.imageUrl || "";
 
   return (
     <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
@@ -193,7 +243,6 @@ export default function PlayPage() {
                 backgroundColor: "#f9f9f9",
               }}
               onError={(e) => {
-                // Fallback if an external image fails
                 e.currentTarget.src =
                   "https://placehold.co/800x500?text=Image+unavailable";
               }}
@@ -218,15 +267,23 @@ export default function PlayPage() {
 
         {/* Right panel */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name (revealed after lock) */}
-          <div style={{ marginBottom: 20 }}>
+          {/* Animal Name (revealed after lock) */}
+          <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 14, color: "#666" }}>Animal Name</div>
             <div style={{ fontSize: 28, fontWeight: 700, minHeight: 36 }}>
               {locked ? current.name : "?"}
             </div>
           </div>
 
-          {/* Easy Mode Hints */}
+          {/* Country / Region (the “answer” you care about) */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 14, color: "#666" }}>Country / Region</div>
+            <div style={{ fontSize: 20, fontWeight: 600, minHeight: 28 }}>
+              {locked ? answerLabel : "?"}
+            </div>
+          </div>
+
+          {/* Easy Mode Hint (single) */}
           {isEasy && wrongGuesses >= 1 && hint1 && (
             <div
               style={{
@@ -236,20 +293,7 @@ export default function PlayPage() {
                 marginBottom: 8,
               }}
             >
-              <strong>Hint 1:</strong> {hint1}
-            </div>
-          )}
-
-          {isEasy && wrongGuesses >= 2 && hint2 && (
-            <div
-              style={{
-                border: "1px solid #444",
-                borderRadius: 10,
-                padding: "8px 12px",
-                marginBottom: 8,
-              }}
-            >
-              <strong>Hint 2:</strong> {hint2}
+              <strong>Hint:</strong> {hint1}
             </div>
           )}
 
@@ -274,13 +318,20 @@ export default function PlayPage() {
             </button>
           </div>
 
-          <p style={{ minHeight: 24, marginTop: 16, fontSize: 18, fontWeight: 500 }}>
+          <p
+            style={{
+              minHeight: 24,
+              marginTop: 16,
+              fontSize: 18,
+              fontWeight: 500,
+            }}
+          >
             {feedback}
           </p>
 
           {isEasy && (
             <p style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
-              Wrong guesses: {wrongGuesses}/3
+              Wrong guesses: {wrongGuesses}/2
             </p>
           )}
         </div>
@@ -288,3 +339,4 @@ export default function PlayPage() {
     </div>
   );
 }
+
