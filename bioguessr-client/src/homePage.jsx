@@ -4,13 +4,12 @@ import { useNavigate } from "react-router-dom";
 import "./App.css";
 
 export default function HomePage() {
-  const [buttonText, setButtonText] = useState("Play (Normal)");
+  const [buttonText, setButtonText] = useState("Play Monkey Mode 🐒");
   const [rulesText, setRulesText] = useState("Rules");
   const [showRules, setShowRules] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Helper: only use text if status OK AND content-type is plain text
     const safeFetchText = async (url) => {
       try {
         const res = await fetch(url).catch(() => null);
@@ -28,8 +27,8 @@ export default function HomePage() {
       const playTxt = await safeFetchText("/api/playButton");
       if (playTxt) setButtonText(playTxt);
 
-      const rulesTxt = await safeFetchText("/api/rulesButton");
-      if (rulesTxt) setRulesText(rulesTxt);
+      const rulesTxtFromApi = await safeFetchText("/api/rulesButton");
+      if (rulesTxtFromApi) setRulesText(rulesTxtFromApi);
     })();
   }, []);
 
@@ -38,14 +37,36 @@ export default function HomePage() {
       <h1>BioGuessr</h1>
       <p>How well do you know Biology?</p>
 
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 12 }}>
-        <button onClick={() => navigate("/play")} aria-label="Play Normal Mode">
-          {buttonText}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          justifyContent: "center",
+          marginTop: 12,
+        }}
+      >
+        {/* Default: Monkey Mode (normal) */}
+        <button
+          onClick={() => navigate("/play")}
+          aria-label="Play Monkey Mode"
+        >
+          {buttonText || "Play Monkey Mode 🐒"}
         </button>
 
-        {/* New Easy Mode button */}
-        <button onClick={() => navigate("/play?mode=easy")} aria-label="Play Easy Mode">
-          Play (Easy)
+        {/* BubbleGuppie = easy mode */}
+        <button
+          onClick={() => navigate("/play?mode=easy")}
+          aria-label="Play BubbleGuppie Easy Mode"
+        >
+          BubbleGuppie 🐟
+        </button>
+
+        {/* BEAST MODE (no query -> just /play?mode=beast if you add a button) */}
+        <button
+          onClick={() => navigate("/play?mode=beast")}
+          aria-label="Play BEAST Mode"
+        >
+          BEAST MODE 🐯
         </button>
 
         <button onClick={() => setShowRules(true)}>{rulesText}</button>
@@ -55,12 +76,12 @@ export default function HomePage() {
         <div className="modal-overlay" onClick={() => setShowRules(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>How To Play</h2>
-            <p>You will be shown a picture of an animal along with its scientific name.</p>
+            <p>You will be shown a picture of an animal.</p>
             <p>
-              Your job is to correctly identify the region(s) where the animal can be found by
-              selecting a country from the dropdown.
+              Your job is to correctly identify the region(s) where the animal
+              can be found by selecting a country from the dropdown.
             </p>
-            <p>Correct guesses give points; incorrect guesses do not.</p>
+            <p>Correct guesses give points; incorrect guesses hurt your score in BEAST MODE.</p>
             <button onClick={() => setShowRules(false)}>Close</button>
           </div>
         </div>
