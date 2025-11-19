@@ -46,7 +46,6 @@ function HomePage() {
   const startNormalMode = () => navigate('/play');
   const startHardMode = () => alert("Hard mode is currently under development!");
 
-  // Split the text for the wave animation
   const subtitleText = "How well do you know Biology?";
 
   return (
@@ -61,7 +60,6 @@ function HomePage() {
           
           <img src={logoImage} alt="BioGuessr Logo" className="main-logo" />
           
-          {/* UPDATED: Subtitle with Wave Animation */}
           <p className="subtitle wave-text">
             {subtitleText.split("").map((char, index) => (
               <span key={index} style={{ animationDelay: `${index * 0.04}s` }}>

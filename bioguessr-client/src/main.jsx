@@ -12,7 +12,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/play" element={<PlayPage />} />
-        
         <Route path="/daily" element={<DailyPage />} />
       </Routes>
     </BrowserRouter>

@@ -187,7 +187,6 @@ export default function DailyPage() {
                         </div>
                     </div>
 
-                    {/* NEW: Answer Section (Scrollable) - Only shows when locked */}
                     {locked && (
                         <div className="answer-section">
                             <div className="answer-title">Correct Regions</div>

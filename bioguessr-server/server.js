@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 let ANIMALS = [];
 try {
-  const p = path.join(__dirname, "animal_data", "updated_animals_with_images.json");
+  const p = path.join(__dirname, "animal_data", "animals.json");
   if (fs.existsSync(p)) {
     const raw = fs.readFileSync(p, "utf8");
     const data = JSON.parse(raw);
@@ -55,7 +55,7 @@ function normalizeAnimal(animal) {
     scientificName: animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
     imageUrl: animal.image_url || animal.imageUrl || animal.local_image_path || null,
     characteristics: animal.characteristics || {},
-    countries: animal.locations || animal.countries || [],
+    countries: animal.locations || animal.countries || [], 
     taxonomy: animal.taxonomy || {},
   };
 }
@@ -69,7 +69,6 @@ function seedRandom(seed) {
   }
 }
 
-
 function getDailySeed() {
   const now = new Date();
   const year = now.getUTCFullYear();
@@ -77,6 +76,7 @@ function getDailySeed() {
   const day = now.getUTCDate().toString().padStart(2, '0');
   return parseInt(`${year}${month}${day}`);
 }
+
 
 app.get("/api/play", (_req, res) => {
   if (ANIMALS.length > 0) {

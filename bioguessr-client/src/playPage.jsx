@@ -185,7 +185,6 @@ export default function PlayPage() {
 
             <div className="game-controls-section">
               
-              {/* CHANGED: Scientific Name Display */}
               <div style={{ marginBottom: '1rem' }}>
                   <div className="animal-name-label">Scientific Name</div>
                   <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
@@ -193,7 +192,6 @@ export default function PlayPage() {
                   </div>
               </div>
 
-              {/* CHANGED: Common Name Display (Hidden until locked) */}
               <div>
                 <div className="animal-name-label">Common Name</div>
                 <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
@@ -201,7 +199,6 @@ export default function PlayPage() {
                 </div>
               </div>
 
-              {/* Hints */}
               {isEasy && wrongGuesses >= 1 && hint1 && (
                 <div className="hint-box"><strong>Hint 1:</strong> {hint1}</div>
               )}
