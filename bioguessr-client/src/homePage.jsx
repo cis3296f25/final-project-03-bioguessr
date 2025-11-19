@@ -1,70 +1,131 @@
-// bioguessr-client/src/homePage.jsx
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import "./App.css";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './App.css';
+import logoImage from '../assets/logos/logosquare.webp'; 
+import bgImage from '../assets/homePageBG.png'; 
 
-export default function HomePage() {
-  const [buttonText, setButtonText] = useState("Play (Normal)");
-  const [rulesText, setRulesText] = useState("Rules");
+function HomePage() {
+  const [buttonText, setButtonText] = useState('Play');
   const [showRules, setShowRules] = useState(false);
+  const [showPlayMenu, setShowPlayMenu] = useState(false); 
+  const [rulesText, setRulesText] = useState('Rules');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Helper: only use text if status OK AND content-type is plain text
-    const safeFetchText = async (url) => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(url).catch(() => null);
-        if (!res?.ok) return null;
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.toLowerCase().includes("text/plain")) return null;
-        const txt = (await res.text()).trim();
-        return txt || null;
-      } catch {
-        return null;
+        const buttonRes = await fetch('/api/playButton');
+        if (buttonRes.ok) setButtonText(await buttonRes.text());
+
+        const rulesRes = await fetch('/api/rulesButton');
+        if (rulesRes.ok) setRulesText(await rulesRes.text());
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
       }
     };
-
-    (async () => {
-      const playTxt = await safeFetchText("/api/playButton");
-      if (playTxt) setButtonText(playTxt);
-
-      const rulesTxt = await safeFetchText("/api/rulesButton");
-      if (rulesTxt) setRulesText(rulesTxt);
-    })();
+    fetchData();
   }, []);
 
+  useEffect(() => {
+    const link = document.querySelector("link[rel~='icon']");
+    if (link) {
+      link.href = logoImage;
+    } else {
+      const newLink = document.createElement('link');
+      newLink.rel = 'icon';
+      newLink.href = logoImage;
+      document.head.appendChild(newLink);
+    }
+  }, []);
+
+  const handleDailyClick = () => navigate('/daily');
+  const handlePlayClick = () => setShowPlayMenu(true);
+  const handleRulesClick = () => setShowRules(true);
+
+  const startEasyMode = () => navigate('/play?mode=easy');
+  const startNormalMode = () => navigate('/play');
+  const startHardMode = () => alert("Hard mode is currently under development!");
+
+  // Split the text for the wave animation
+  const subtitleText = "How well do you know Biology?";
+
   return (
-    <div className="background" style={{ textAlign: "center", padding: 24 }}>
-      <h1>BioGuessr</h1>
-      <p>How well do you know Biology?</p>
-
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 12 }}>
-        <button onClick={() => navigate("/play")} aria-label="Play Normal Mode">
-          {buttonText}
-        </button>
-
-        {/* New Easy Mode button */}
-        <button onClick={() => navigate("/play?mode=easy")} aria-label="Play Easy Mode">
-          Play (Easy)
-        </button>
-
-        <button onClick={() => setShowRules(true)}>{rulesText}</button>
-      </div>
-
-      {showRules && (
-        <div className="modal-overlay" onClick={() => setShowRules(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>How To Play</h2>
-            <p>You will be shown a picture of an animal along with its scientific name.</p>
-            <p>
-              Your job is to correctly identify the region(s) where the animal can be found by
-              selecting a country from the dropdown.
-            </p>
-            <p>Correct guesses give points; incorrect guesses do not.</p>
-            <button onClick={() => setShowRules(false)}>Close</button>
+    <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+      <div className="overlay">
+        <div className="glass-card home-card">
+          
+          <h1 className="title">
+            <span className="text-bio">Bio</span>
+            <span className="text-guessr">Guessr</span>
+          </h1>
+          
+          <img src={logoImage} alt="BioGuessr Logo" className="main-logo" />
+          
+          {/* UPDATED: Subtitle with Wave Animation */}
+          <p className="subtitle wave-text">
+            {subtitleText.split("").map((char, index) => (
+              <span key={index} style={{ animationDelay: `${index * 0.04}s` }}>
+                {char === " " ? "\u00A0" : char}
+              </span>
+            ))}
+          </p>
+          
+          <div className="button-group">
+            <button className="btn primary-btn" onClick={handlePlayClick}>
+              {buttonText}
+            </button>
+            <button className="btn secondary-btn" onClick={handleDailyClick}>
+              Daily Challenge
+            </button>
+            <button className="btn secondary-btn" onClick={handleRulesClick}>
+              {rulesText}
+            </button>
           </div>
         </div>
-      )}
+
+        {showRules && (
+          <div className="modal-overlay" onClick={() => setShowRules(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>How To Play</h2>
+              <p>You will be shown a picture of an animal along with its scientific name.</p>
+              <p>Your job is to correctly identify the region(s) that the animal can be found in by selecting a country from the dropdown menu provided.</p>
+              <p>Correct guesses will be rewarded with points, while incorrect guesses will not reward any points.</p>
+              <button className="btn modal-btn" onClick={() => setShowRules(false)}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {showPlayMenu && (
+          <div className="modal-overlay" onClick={() => setShowPlayMenu(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>Select Difficulty</h2>
+              <p>Choose your challenge level:</p>
+              
+              <div className="button-group" style={{ marginTop: '20px' }}>
+                <button className="btn primary-btn" onClick={startEasyMode}>
+                  Easy Mode
+                </button>
+                <button 
+                  className="btn primary-btn" 
+                  style={{ backgroundColor: '#2196f3' }} 
+                  onClick={startNormalMode}
+                >
+                  Normal Mode
+                </button>
+                <button className="btn secondary-btn" onClick={startHardMode}>
+                  Hard Mode (Locked)
+                </button>
+              </div>
+
+              <button className="btn modal-btn" onClick={() => setShowPlayMenu(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default HomePage;

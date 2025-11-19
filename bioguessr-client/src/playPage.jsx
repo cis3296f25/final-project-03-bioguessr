@@ -1,13 +1,13 @@
-// bioguessr-client/src/playPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
 import { getFeatureHint, getWeightHint } from "./utils/hints.js";
+import "./App.css";
+import bgImage from '../assets/homePageBG.png'; 
+import logoImage from '../assets/logos/logorect.webp'; 
 
-// Only for the round counter UI (your server still supplies the animal)
 const DEMO_TOTAL_ROUNDS = 4;
 
-// Read ?mode=easy from the URL
 function useIsEasyMode() {
   const { search } = useLocation();
   return new URLSearchParams(search).get("mode") === "easy";
@@ -29,7 +29,6 @@ export default function PlayPage() {
   const totalRounds = DEMO_TOTAL_ROUNDS;
   const gameOver = round > totalRounds;
 
-  // Load animal for this round
   useEffect(() => {
     let cancelled = false;
 
@@ -61,48 +60,63 @@ export default function PlayPage() {
     };
   }, [round]);
 
-  // Easy-mode hints from the current animal (after wrong guesses)
   const hint1 = useMemo(() => {
     if (!isEasy || !current || wrongGuesses < 1) return null;
-    return getFeatureHint(current); // most_distinctive_feature → diet → habitat → prey → lifestyle → slogan
+    return getFeatureHint(current);
   }, [isEasy, current, wrongGuesses]);
 
   const hint2 = useMemo(() => {
     if (!isEasy || !current || wrongGuesses < 2) return null;
-    return getWeightHint(current); // weight → top_speed → height/length → location
+    return getWeightHint(current);
   }, [isEasy, current, wrongGuesses]);
 
   if (gameOver) {
     return (
-      <div style={{ padding: 16 }}>
-        <h2>Game Over</h2>
-        <p>
-          Final score: <strong>{score}</strong>
-        </p>
-        <button onClick={() => navigate("/")}>Back To Home</button>
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2 className="title">Game Over</h2>
+            <p className="subtitle" style={{ marginTop: '1rem' }}>Final Score: {score}</p>
+            <button className="btn primary-btn" style={{ maxWidth: '300px', marginTop: '2rem' }} onClick={() => navigate("/")}>
+              Back To Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div style={{ padding: 16 }}>
-        <h2>Couldn’t load the next animal.</h2>
-        <button onClick={() => setRound((r) => r)}>Retry</button>
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2>Couldn’t load the next animal.</h2>
+            <button className="btn secondary-btn" onClick={() => setRound((r) => r)}>Retry</button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!current) {
-    return <div style={{ padding: 16 }}>Loading animal for Round {round}...</div>;
+    return (
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2>Loading Round {round}...</h2>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   function submitGuess() {
     if (!current || !guess?.trim() || locked) return;
 
-    // Current rule: compare to ANIMAL NAME (change later if you swap to countries)
-    const correct =
-      guess.trim().toLowerCase() === String(current.name || "").toLowerCase();
+    const correct = current.countries.some(
+      (c) => c.toLowerCase() === guess.trim().toLowerCase()
+    );
 
     if (correct) {
       setScore((s) => s + 100);
@@ -111,28 +125,24 @@ export default function PlayPage() {
       return;
     }
 
-    // Wrong answer handling
     if (isEasy) {
-      // In Easy mode, allow up to 3 wrong attempts with hints
       setWrongGuesses((n) => {
         const next = n + 1;
         if (next >= 3) {
           setLocked(true);
-          setFeedback(`Not quite — it was ${current.name}.`);
+          setFeedback("Not quite."); 
         } else {
           setFeedback("Try again!");
         }
         return next;
       });
     } else {
-      // In Normal mode, lock immediately after one guess (right or wrong)
       setLocked(true);
-      setFeedback(`Not quite — it was ${current.name}.`);
+      setFeedback("Not quite."); 
     }
   }
 
   function nextRound() {
-    // Advance the round; effect above will fetch a new animal and reset state
     setRound((r) => r + 1);
   }
 
@@ -140,149 +150,100 @@ export default function PlayPage() {
     navigate("/");
   }
 
-  const imgSrc = current.image_url || current.imageUrl || ""; // server normalizes these
+  const imgSrc = current.image_url || current.imageUrl || "";
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <header
-        style={{
-          display: "flex",
-          gap: 16,
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          borderBottom: "1px solid #eee",
-          paddingBottom: 16,
-        }}
-      >
-        <img
-          src={"../assets/logos/logorect.webp"}
-          style={{ width: "30%", minWidth: 150, height: "auto" }}
-          alt="Logo"
-        />
-        <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div>
-              <strong>Score:</strong> {score}
+    <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+      <div className="overlay">
+        <div className="glass-card game-card">
+          
+          <header className="game-header">
+            <img src={logoImage} className="header-logo" alt="BioGuessr" />
+            <div className="game-stats">
+              <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
+              <div>Round: {round} / {totalRounds}</div>
+              <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{isEasy ? "Easy" : "Normal"}</span></div>
             </div>
-            <div>
-              <strong>Round:</strong> {round} / {totalRounds}
-            </div>
-            <div>
-              <strong>Mode:</strong> {isEasy ? "Easy" : "Normal"}
-            </div>
-          </div>
-          <button onClick={restart}>Back To Home</button>
-        </div>
-      </header>
-
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        {/* Image */}
-        <div style={{ flex: 1.5, minWidth: 0 }}>
-          {imgSrc ? (
-            <img
-              src={imgSrc}
-              alt="Animal to guess"
-              style={{
-                width: "100%",
-                height: "auto",
-                maxHeight: "500px",
-                objectFit: "contain",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                backgroundColor: "#f9f9f9",
-              }}
-              onError={(e) => {
-                // Fallback if an external image fails
-                e.currentTarget.src =
-                  "https://placehold.co/800x500?text=Image+unavailable";
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: 320,
-                display: "grid",
-                placeItems: "center",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                background: "#f9f9f9",
-                color: "#666",
-              }}
-            >
-              (No image provided)
-            </div>
-          )}
-        </div>
-
-        {/* Right panel */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name (revealed after lock) */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 14, color: "#666" }}>Animal Name</div>
-            <div style={{ fontSize: 28, fontWeight: 700, minHeight: 36 }}>
-              {locked ? current.name : "?"}
-            </div>
-          </div>
-
-          {/* Easy Mode Hints */}
-          {isEasy && wrongGuesses >= 1 && hint1 && (
-            <div
-              style={{
-                border: "1px solid #444",
-                borderRadius: 10,
-                padding: "8px 12px",
-                marginBottom: 8,
-              }}
-            >
-              <strong>Hint 1:</strong> {hint1}
-            </div>
-          )}
-
-          {isEasy && wrongGuesses >= 2 && hint2 && (
-            <div
-              style={{
-                border: "1px solid #444",
-                borderRadius: 10,
-                padding: "8px 12px",
-                marginBottom: 8,
-              }}
-            >
-              <strong>Hint 2:</strong> {hint2}
-            </div>
-          )}
-
-          {/* Guess input (autocomplete) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <CountryDropdown setGuess={setGuess} />
-
-            <button
-              onClick={submitGuess}
-              disabled={!guess?.trim() || locked}
-              style={{ padding: 12, fontSize: 16, fontWeight: "bold" }}
-            >
-              Submit Guess
+            <button className="btn secondary-btn" style={{ width: 'auto', padding: '0.5em 1em' }} onClick={restart}>
+              Exit
             </button>
+          </header>
 
-            <button
-              onClick={nextRound}
-              disabled={!locked}
-              style={{ padding: 12, fontSize: 16 }}
-            >
-              Next Round
-            </button>
+          <div className="game-layout">
+            <div className="game-image-section">
+              {imgSrc ? (
+                <img
+                  src={imgSrc}
+                  alt="Animal to guess"
+                  className="game-image"
+                  onError={(e) => { e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable"; }}
+                />
+              ) : (
+                <div className="game-image-placeholder">(No image provided)</div>
+              )}
+            </div>
+
+            <div className="game-controls-section">
+              
+              {/* CHANGED: Scientific Name Display */}
+              <div style={{ marginBottom: '1rem' }}>
+                  <div className="animal-name-label">Scientific Name</div>
+                  <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
+                      {current.scientificName}
+                  </div>
+              </div>
+
+              {/* CHANGED: Common Name Display (Hidden until locked) */}
+              <div>
+                <div className="animal-name-label">Common Name</div>
+                <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
+                  {locked ? current.name : "?"}
+                </div>
+              </div>
+
+              {/* Hints */}
+              {isEasy && wrongGuesses >= 1 && hint1 && (
+                <div className="hint-box"><strong>Hint 1:</strong> {hint1}</div>
+              )}
+              {isEasy && wrongGuesses >= 2 && hint2 && (
+                <div className="hint-box"><strong>Hint 2:</strong> {hint2}</div>
+              )}
+
+              <div className="input-group">
+                <CountryDropdown setGuess={setGuess} />
+
+                <button
+                  className="btn primary-btn"
+                  onClick={submitGuess}
+                  disabled={!guess?.trim() || locked}
+                >
+                  Submit Guess
+                </button>
+
+                <button
+                  className="btn secondary-btn"
+                  onClick={nextRound}
+                  disabled={!locked}
+                >
+                  Next Round
+                </button>
+              </div>
+
+              <p className="feedback-text" style={{ color: feedback.includes("Correct") ? "#4caf50" : "#ff5252" }}>
+                {feedback}
+              </p>
+            </div>
           </div>
 
-          <p style={{ minHeight: 24, marginTop: 16, fontSize: 18, fontWeight: 500 }}>
-            {feedback}
-          </p>
-
-          {isEasy && (
-            <p style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
-              Wrong guesses: {wrongGuesses}/3
-            </p>
+          {locked && (
+            <div className="answer-section">
+              <div className="answer-title">Correct Regions</div>
+              <div className="answer-text">
+                {current.countries.join(", ")}
+              </div>
+            </div>
           )}
+
         </div>
       </div>
     </div>
