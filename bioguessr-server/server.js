@@ -3,12 +3,29 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  CreateTableCommand,
+  QueryCommand
+} from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
 
 // --- Load animals with characteristics (one-time) ---
 let ANIMALS = [];
@@ -56,118 +73,79 @@ app.get("/api/play", (_req, res) => {
   res.json(demo);
 });
 
-app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
-});
 
 
 
-
-/*
-POST request to update leaderboard with new score
-
-Example usage for this API:
-async function submitScore(name, score) {
-  try { //fetch for API POST Request
-    const response = await fetch("/api/updateLeaderboard", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: name,
-        score: score,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Error submitting score:", data.error);
-    }
-  } catch (err) {
-    console.error("Error with request:", err);
-  }
-}
-*/
+//POST request to upload a score to the leaderboard 
 app.post("/api/updateLeaderboard", async (req, res) => {
-  const { name, score } = req.body; //data needed for request
+  const { initials, score } = req.body;
 
-  if (!name || score === undefined) { //return error if request does not have name or score
-    return res.status(400).json(
-      { error: "name and score required" }
-    );
+  if (!initials || score === undefined) { //validate input
+    return res.status(400).json({
+      error: "initials and score required",
+    });
   }
 
   try {
-    const newItem = {
-      id: uuidv4(), //needed to allow repeats in names (gives everyone a unique PK) - otherwise we would have to rely on unique names
-      group: "LEADERBOARD", //needed to sort data for retrieval
-      name,
-      score,
+    const item = {
+      id: uuidv4(), //unique key 
+      group: "LEADERBOARD", //group for sorting
+      initials: initials,
+      score: score,
     };
 
-    //update leaderboard database with new users score.
+    const marshalledItem = marshall(item, {
+      removeUndefinedValues: true,
+    });
+
+    // Upload to DynamoDB 
     await client.send(
       new PutItemCommand({
         TableName: process.env.LEADERBOARD_TABLE,
-        Item: marshall(newItem),
+        Item: marshalledItem,
       })
     );
 
-    res.json({ message: "Score added successfully" }); //success message on success
-  } catch (err) { //catches errors
-    console.error("Error adding score:", err);
-    res.status(400).json(
-      { error: "Error adding score" }
-    );
+    console.log(`Inserted leaderboard row for: ${initials}`);
+    return res.json({ message: "Score added successfully" });
+  } catch (err) {
+    console.error("Error inserting leaderboard item:", err);
+    return res.status(500).json({ error: "Failed to insert score" });
   }
 });
 
-
-/*
-GET request to get the sorted top 10 from the leaderboard
-async function getLeaderboard() {
-  try {
-    const response = await fetch("/api/getTopTenFromLeaderboard"); 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Error fetching leaderboard:", data.error);
-      return;
-    }
-
-    console.log("Leaderboard:");
-    data.leaderboard.forEach((entry, index) => { //sorting through data
-      console.log(`${index + 1}. ${entry.name} - ${entry.score}`);
-    });
-
-  } catch (err) {
-    console.error("Error with request:", err);
-  }
-}
-
-
-*/
+//GET request to get the top ten in order from leaderboard
 app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
-   try {
-    const data = await client.send(
-      new QueryCommand({
-        TableName: process.env.LEADERBOARD_TABLE,
-        IndexName: "ScoreIndex",
-        KeyConditionExpression: "#g = :g",
-        ExpressionAttributeNames: { "#g": "group", "#n": "name" },
-        ExpressionAttributeValues: marshall({ ":g": "LEADERBOARD" }),
-        ProjectionExpression: "#n, score",
-        ScanIndexForward: false,
-        Limit: 10,
-      })
-    );
+  try {
+    const params = { //parameters for query to get top ten in order
+      TableName: process.env.LEADERBOARD_TABLE,
+      IndexName: "ScoreIndex",
+      KeyConditionExpression: "#g = :g",
+      ExpressionAttributeNames: {
+        "#g": "group"
+      },
+      ExpressionAttributeValues: {
+        ":g": { S: "LEADERBOARD" }
+      },
+      ProjectionExpression: "initials, score",
+      ScanIndexForward: false,
+      Limit: 10,
+    };
 
-    const leaderboard = data.Items.map((i) => unmarshall(i));
-    res.json({ leaderboard }); //return the top ten
+    const data = await client.send(new QueryCommand(params)); //sending query
+
+    const leaderboard = data.Items.map(unmarshall);
+    res.json({ leaderboard }); //response
   } catch (err) {
     console.error("Error fetching leaderboard:", err);
     res.status(500).json({ error: "Error fetching leaderboard" });
   }
 });
+
+
+
+app.listen(PORT, () => {
+  console.log(`[server] listening on http://localhost:${PORT}`);
+});
+
+
