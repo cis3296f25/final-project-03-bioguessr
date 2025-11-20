@@ -1,3 +1,8 @@
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -41,6 +46,7 @@ body {
   box-sizing: border-box;
 }
 
+
 .glass-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(15px);
@@ -68,9 +74,11 @@ body {
   width: 95%;
   max-height: 95vh; 
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
+
 
 .title {
   font-size: 4rem;
@@ -133,6 +141,7 @@ body {
   transition: transform 0.3s ease;
 }
 .main-logo:hover { transform: scale(1.05); }
+
 
 .button-group {
   display: flex;
@@ -401,6 +410,9 @@ body {
   line-height: 1.6;
   color: #fff;
   font-weight: 500;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 @keyframes fadeIn {
