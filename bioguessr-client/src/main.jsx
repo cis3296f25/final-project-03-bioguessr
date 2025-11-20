@@ -1,13 +1,19 @@
-import { StrictMode } from 'react'
-import { BrowserRouter } from 'react-router-dom'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import HomePage from './homePage.jsx'
+import PlayPage from './playPage.jsx'
+import DailyPage from './dailyPage.jsx'
+import './App.css'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter>
-      <App />
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/play" element={<PlayPage />} />
+        <Route path="/daily" element={<DailyPage />} />
+      </Routes>
     </BrowserRouter>
-  </StrictMode>,
+  </React.StrictMode>,
 )

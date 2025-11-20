@@ -1,38 +1,39 @@
-// bioguessr-client/src/playPage.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
-import { getFeatureHint } from "./utils/hints.js";
+import { getFeatureHint, getWeightHint } from "./utils/hints.js";
+import "./App.css";
+import bgImage from '../assets/homePageBG.png'; 
+import logoImage from '../assets/logos/logorect.webp'; 
 
-// Only for the round counter UI (your server still supplies the animal)
+// Normal/Easy use a fixed number of rounds
 const DEMO_TOTAL_ROUNDS = 4;
 
-// Read ?mode=easy from the URL
-function useIsEasyMode() {
+// BEAST MODE constants
+const BEAST_MAX_LIVES = 3;
+const BEAST_BASE_TIME = 7; // seconds at early rounds
+const BEAST_MIN_TIME = 4; // never go below 4s
+
+// Read ?mode=easy or ?mode=beast from the URL
+function useGameMode() {
   const { search } = useLocation();
-  return new URLSearchParams(search).get("mode") === "easy";
+  const modeParam = new URLSearchParams(search).get("mode");
+  if (modeParam === "easy") return "easy";
+  if (modeParam === "beast") return "beast";
+  return "normal";
 }
 
-// Helper: normalize countries list from the animal object
-function getCountryList(animal) {
-  if (!animal || !animal.countries) return [];
-  const raw = animal.countries;
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((c) => (typeof c === "string" ? c.trim() : ""))
-    .filter(Boolean);
-}
-
-// Helper: pretty string for revealing countries
-function formatCountryAnswer(countries) {
-  if (!countries || countries.length === 0) return "";
-  if (countries.length === 1) return countries[0];
-  if (countries.length <= 3) return countries.join(", ");
-  return countries.slice(0, 3).join(", ") + ", ...";
+// Compute the current time limit for BEAST mode based on round number
+function computeBeastTimeLimit(round) {
+  const decrements = Math.floor((round - 1) / 10); // every 10 rounds, -1s
+  const limit = BEAST_BASE_TIME - decrements;
+  return Math.max(BEAST_MIN_TIME, limit);
 }
 
 export default function PlayPage() {
-  const isEasy = useIsEasyMode();
+  const mode = useGameMode();
+  const isEasy = mode === "easy";
+  const isBeast = mode === "beast";
   const navigate = useNavigate();
 
   const [round, setRound] = useState(1);
@@ -44,26 +45,22 @@ export default function PlayPage() {
   const [wrongGuesses, setWrongGuesses] = useState(0);
   const [loadError, setLoadError] = useState(false);
 
+  // BEAST MODE: lives + timer + streak
+  const [lives, setLives] = useState(BEAST_MAX_LIVES);
+  const [streak, setStreak] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  const heartbeatRef = useRef(null); 
+
   const totalRounds = DEMO_TOTAL_ROUNDS;
-  const gameOver = round > totalRounds;
 
-  // Derived: list of valid countries + label for revealing
-  const countryList = useMemo(() => getCountryList(current), [current]);
-  const answerCountryDisplay = useMemo(
-    () => formatCountryAnswer(countryList),
-    [countryList]
-  );
+  // Game Over Conditions
+  const roundsExceeded = !isBeast && round > totalRounds;
+  const beastDead = isBeast && lives <= 0;
+  const gameOver = roundsExceeded || beastDead;
 
-  const fallbackRegion =
-    current?.characteristics?.location ||
-    current?.location ||
-    current?.name ||
-    "Unknown";
-
-  // Shown in "Country / Region" field + wrong-answer feedback
-  const answerLabel = answerCountryDisplay || fallbackRegion;
-
-  // Load animal for this round
+  // ---------- Load animal for this round ----------
   useEffect(() => {
     let cancelled = false;
 
@@ -93,96 +90,258 @@ export default function PlayPage() {
     return () => {
       cancelled = true;
     };
-  }, [round]);
+  }, [round]); // Re-fetch when round changes
 
-  // Easy-mode hint from the current animal (after first wrong guess)
+  // ---------- BEAST MODE: Setup Heartbeat Audio ----------
+  useEffect(() => {
+    if (!isBeast) {
+      if (heartbeatRef.current) {
+        heartbeatRef.current.pause();
+        heartbeatRef.current.currentTime = 0;
+      }
+      return;
+    }
+    if (!heartbeatRef.current) {
+      try {
+        // Ensure this file exists in public/assets/audio/
+        const audio = new Audio("/assets/audio/heartbeat.mp3");
+        audio.loop = true;
+        audio.volume = 0.4;
+        heartbeatRef.current = audio;
+      } catch (err) {
+        console.warn("Could not create heartbeat audio:", err);
+      }
+    }
+  }, [isBeast]);
+
+  // ---------- BEAST MODE: Reset Timer per Round ----------
+  useEffect(() => {
+    if (!isBeast || !current) {
+      setTimeLimit(null);
+      setTimeLeft(null);
+      return;
+    }
+    const limit = computeBeastTimeLimit(round);
+    setTimeLimit(limit);
+    setTimeLeft(limit);
+  }, [isBeast, current, round]);
+
+  // ---------- BEAST MODE: Timer Tick ----------
+  useEffect(() => {
+    if (!isBeast || !current || locked || timeLimit == null || timeLeft == null) {
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      // Time's up! Treat as wrong answer
+      if (!locked && lives > 0) {
+        const penalty = Math.floor(score / 3);
+        const newScore = Math.max(0, score - penalty);
+
+        setLocked(true);
+        setScore(newScore);
+        setLives((prev) => Math.max(0, prev - 1));
+        setStreak(0);
+        setFeedback(`Time's up! (-${penalty} pts)`);
+      }
+      return;
+    }
+
+    const id = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t == null) return t;
+        const next = t - 0.1;
+        return next <= 0 ? 0 : next;
+      });
+    }, 100);
+
+    return () => clearInterval(id);
+  }, [isBeast, current, locked, timeLeft, timeLimit, lives, score]);
+
+  // ---------- BEAST MODE: Heartbeat Speed ----------
+  useEffect(() => {
+    if (!isBeast) return;
+    const audio = heartbeatRef.current;
+    if (!audio || timeLimit == null || timeLeft == null) return;
+
+    if (locked || lives <= 0 || timeLeft <= 0) {
+      audio.pause();
+      return;
+    }
+
+    const ratio = Math.max(0, Math.min(1, timeLeft / timeLimit));
+    const minRate = 1.0;
+    const maxRate = 1.8; 
+    const rate = maxRate - (maxRate - minRate) * ratio; 
+
+    audio.playbackRate = rate;
+    audio.play().catch(() => {}); // Ignore play errors
+
+    return () => { audio.pause(); };
+  }, [isBeast, timeLeft, timeLimit, locked, lives]);
+
+  // ---------- BEAST MODE: Auto-Advance ----------
+  useEffect(() => {
+    if (!isBeast) return;
+    if (!locked) return;
+    if (lives <= 0) return;
+
+    const id = setTimeout(() => {
+      setRound((r) => r + 1);
+    }, 1500); // Short pause to see result before auto-advancing
+
+    return () => clearTimeout(id);
+  }, [isBeast, locked, lives]);
+
+
+  // ---------- HINTS (Easy Mode) ----------
   const hint1 = useMemo(() => {
     if (!isEasy || !current || wrongGuesses < 1) return null;
     return getFeatureHint(current);
   }, [isEasy, current, wrongGuesses]);
 
+  const hint2 = useMemo(() => {
+    if (!isEasy || !current || wrongGuesses < 2) return null;
+    return getWeightHint(current);
+  }, [isEasy, current, wrongGuesses]);
+
+
+  // ---------- BEAST MODE: Zoom Effect ----------
+  const zoomScale = useMemo(() => {
+    if (!isBeast || !timeLimit || timeLeft == null) return 1;
+    const ratio = Math.max(0, Math.min(1, timeLeft / timeLimit));
+    // Scale from 2.1 (start) down to 1.0 (end)
+    const maxScale = 2.1; 
+    const minScale = 1.0; 
+    const baseScale = minScale + (maxScale - minScale) * ratio;
+    
+    // Add pulse when time is low
+    const danger = 1 - ratio;
+    const phase = (timeLimit - timeLeft) * 10; 
+    const pulse = danger > 0.3 ? 0.03 * Math.sin(phase) * danger : 0;
+
+    return baseScale + pulse;
+  }, [isBeast, timeLimit, timeLeft]);
+
+
+  // ---------- UI RENDER LOGIC ----------
+
+  // Game Over Screen
   if (gameOver) {
     return (
-      <div style={{ padding: 16 }}>
-        <h2>Game Over</h2>
-        <p>
-          Final score: <strong>{score}</strong>
-        </p>
-        <button onClick={() => navigate("/")}>Back To Home</button>
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2 className="title" style={{color: isBeast && beastDead ? '#ff5252' : '#4caf50'}}>
+                {beastDead ? "DEFEATED" : "Game Over"}
+            </h2>
+            <p className="subtitle" style={{ marginTop: '1rem' }}>
+                {beastDead ? "You ran out of lives." : "All rounds completed."}
+            </p>
+            <div className="game-stats" style={{flexDirection: 'column', gap: '0.5rem', marginTop: '1rem'}}>
+                <div>Final Score: <strong>{score}</strong></div>
+                {isBeast && <div>Highest Streak: <strong>{streak}</strong></div>}
+            </div>
+            <button className="btn primary-btn" style={{ maxWidth: '300px', marginTop: '2rem' }} onClick={() => navigate("/")}>
+              Back To Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div style={{ padding: 16 }}>
-        <h2>Couldn’t load the next animal.</h2>
-        <button onClick={() => setRound((r) => r)}>Retry</button>
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2>Couldn’t load the next animal.</h2>
+            <button className="btn secondary-btn" onClick={() => setRound((r) => r)}>Retry</button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!current) {
-    return <div style={{ padding: 16 }}>Loading animal for Round {round}...</div>;
+    return (
+      <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="overlay">
+          <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+            <h2>Loading Round {round}...</h2>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // ---------- GUESS SUBMISSION ----------
   function submitGuess() {
     if (!current || !guess?.trim() || locked) return;
 
-    const normalizedGuess = guess.trim().toLowerCase();
-    let correct = false;
-
-    // PRIMARY RULE: compare guess to any of the animal's countries
-    if (countryList.length > 0) {
-      correct = countryList.some(
-        (c) => c.trim().toLowerCase() === normalizedGuess
-      );
-    } else {
-      // Fallback: compare to animal name (should rarely happen)
-      correct =
-        normalizedGuess === String(current.name || "").trim().toLowerCase();
-    }
+    const correct = current.countries.some(
+      (c) => c.toLowerCase() === guess.trim().toLowerCase()
+    );
 
     if (correct) {
       const userGuessClean = guess.trim();
-      setScore((s) => s + 100);
-      setLocked(true);
-      setFeedback(
-        countryList.length > 0
-          ? `Correct! You guessed ${userGuessClean}. (+100)`
-          : "Correct! +100"
-      );
+      
+      if (isBeast) {
+        // Beast Scoring
+        const newStreak = streak + 1;
+        const basePoints = 100;
+        const roundBonus = Math.max(0, (round - 1) * 5);
+        const timeRatio = timeLimit && timeLeft != null && timeLimit > 0
+            ? Math.max(0, Math.min(1, timeLeft / timeLimit)) : 0;
+        const timeBonus = Math.round(20 * timeRatio); 
+
+        const gained = (basePoints + roundBonus + timeBonus) * newStreak;
+
+        setStreak(newStreak);
+        setScore((s) => s + gained);
+        setLocked(true);
+        setFeedback(`Correct! Streak x${newStreak} (+${gained})`);
+      } else {
+        // Normal Scoring
+        setScore((s) => s + 100);
+        setLocked(true);
+        setFeedback("Correct! +100");
+      }
       return;
     }
 
-    // Wrong answer handling
+    // WRONG ANSWER
+    if (isBeast) {
+      const penalty = Math.floor(score / 3);
+      const newScore = Math.max(0, score - penalty);
+      setScore(newScore);
+      setLives((prev) => Math.max(0, prev - 1));
+      setStreak(0);
+      setLocked(true);
+      setFeedback(`Wrong! (-${penalty} pts)`);
+      return;
+    }
+
+    // Normal/Easy Logic
     if (isEasy) {
-      // Easy mode: 2 guesses total, 1 hint after the first wrong guess
       setWrongGuesses((n) => {
         const next = n + 1;
-
-        if (next >= 2) {
+        if (next >= 3) {
           setLocked(true);
-          setFeedback(
-            `Not quite — this animal can be found in: ${answerLabel}.`
-          );
+          setFeedback("Not quite."); 
         } else {
-          setFeedback("Not quite — here's a habitat hint!");
+          setFeedback("Try again!");
         }
-
         return next;
       });
     } else {
-      // In Normal mode, lock immediately after one guess (right or wrong)
       setLocked(true);
-      setFeedback(
-        `Not quite — this animal can be found in: ${answerLabel}.`
-      );
+      setFeedback("Not quite."); 
     }
   }
 
   function nextRound() {
-    // Advance the round; effect above will fetch a new animal and reset state
     setRound((r) => r + 1);
   }
 
@@ -192,151 +351,146 @@ export default function PlayPage() {
 
   const imgSrc = current.image_url || current.imageUrl || "";
 
+  // Label for the mode display
+  let modeLabel = "Normal";
+  if (isBeast) modeLabel = "BEAST MODE";
+  if (isEasy) modeLabel = "Easy";
+
+  // Timer Style Calculation (Beast only)
+  let timerColor = "#4caf50"; // Green
+  if (isBeast && timeLimit) {
+    const ratio = timeLeft / timeLimit;
+    if (ratio < 0.3) timerColor = "#ff5252"; // Red
+    else if (ratio < 0.6) timerColor = "#ff9800"; // Orange
+  }
+
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <header
-        style={{
-          display: "flex",
-          gap: 16,
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          borderBottom: "1px solid #eee",
-          paddingBottom: 16,
-        }}
-      >
-        <img
-          src={"../assets/logos/logorect.webp"}
-          style={{ width: "30%", minWidth: 150, height: "auto" }}
-          alt="Logo"
-        />
-        <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div>
-              <strong>Score:</strong> {score}
+    <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
+      <div className="overlay">
+        <div className="glass-card game-card">
+          
+          {/* HEADER */}
+          <header className="game-header">
+            <img src={logoImage} className="header-logo" alt="BioGuessr" />
+            
+            <div className="game-stats">
+              <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
+              
+              {isBeast ? (
+                  <>
+                    <div>Round: {round}</div>
+                    <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
+                    <div>Lives: {Array(lives).fill("❤️").join("")}</div>
+                    <div>Streak: x{streak}</div>
+                    <div style={{ fontWeight: 'bold', color: timerColor, minWidth: '60px' }}>
+                         {timeLeft != null ? timeLeft.toFixed(1) + "s" : "--"}
+                    </div>
+                  </>
+              ) : (
+                  <>
+                    <div>Round: {round} / {totalRounds}</div>
+                    <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
+                  </>
+              )}
             </div>
-            <div>
-              <strong>Round:</strong> {round} / {totalRounds}
-            </div>
-            <div>
-              <strong>Mode:</strong> {isEasy ? "Easy" : "Normal"}
-            </div>
-          </div>
-          <button onClick={restart}>Back To Home</button>
-        </div>
-      </header>
-
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        {/* Image */}
-        <div style={{ flex: 1.5, minWidth: 0 }}>
-          {imgSrc ? (
-            <img
-              src={imgSrc}
-              alt="Animal to guess"
-              style={{
-                width: "100%",
-                height: "auto",
-                maxHeight: "500px",
-                objectFit: "contain",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                backgroundColor: "#f9f9f9",
-              }}
-              onError={(e) => {
-                e.currentTarget.src =
-                  "https://placehold.co/800x500?text=Image+unavailable";
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: 320,
-                display: "grid",
-                placeItems: "center",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                background: "#f9f9f9",
-                color: "#666",
-              }}
-            >
-              (No image provided)
-            </div>
-          )}
-        </div>
-
-        {/* Right panel */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Animal Name (revealed after lock) */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: "#666" }}>Animal Name</div>
-            <div style={{ fontSize: 28, fontWeight: 700, minHeight: 36 }}>
-              {locked ? current.name : "?"}
-            </div>
-          </div>
-
-          {/* Country / Region (the “answer” you care about) */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 14, color: "#666" }}>Country / Region</div>
-            <div style={{ fontSize: 20, fontWeight: 600, minHeight: 28 }}>
-              {locked ? answerLabel : "?"}
-            </div>
-          </div>
-
-          {/* Easy Mode Hint (single) */}
-          {isEasy && wrongGuesses >= 1 && hint1 && (
-            <div
-              style={{
-                border: "1px solid #444",
-                borderRadius: 10,
-                padding: "8px 12px",
-                marginBottom: 8,
-              }}
-            >
-              <strong>Hint:</strong> {hint1}
-            </div>
-          )}
-
-          {/* Guess input (autocomplete) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <CountryDropdown setGuess={setGuess} />
-
-            <button
-              onClick={submitGuess}
-              disabled={!guess?.trim() || locked}
-              style={{ padding: 12, fontSize: 16, fontWeight: "bold" }}
-            >
-              Submit Guess
+            
+            <button className="btn secondary-btn" style={{ width: 'auto', padding: '0.5em 1em' }} onClick={restart}>
+              Exit
             </button>
+          </header>
 
-            <button
-              onClick={nextRound}
-              disabled={!locked}
-              style={{ padding: 12, fontSize: 16 }}
-            >
-              Next Round
-            </button>
+          {/* MAIN CONTENT */}
+          <div className="game-layout">
+            
+            {/* Left Column: Image */}
+            <div className="game-image-section">
+              {imgSrc ? (
+                <img
+                  src={imgSrc}
+                  alt="Animal to guess"
+                  className="game-image"
+                  // Apply zoom style if Beast Mode
+                  style={isBeast ? { 
+                      transform: `scale(${zoomScale})`,
+                      transition: 'transform 0.1s linear',
+                      border: '2px solid ' + timerColor // Border pulses color with time
+                  } : {}}
+                  onError={(e) => {
+                    e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable";
+                  }}
+                />
+              ) : (
+                <div className="game-image-placeholder">
+                  (No image provided)
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Controls */}
+            <div className="game-controls-section">
+              
+              <div style={{ marginBottom: '1rem' }}>
+                  <div className="animal-name-label">Scientific Name</div>
+                  <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
+                      {current.scientificName}
+                  </div>
+              </div>
+
+              <div>
+                <div className="animal-name-label">Common Name</div>
+                <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
+                  {locked ? current.name : "?"}
+                </div>
+              </div>
+
+              {/* Hints (Only show in Easy Mode) */}
+              {isEasy && wrongGuesses >= 1 && hint1 && (
+                <div className="hint-box"><strong>Hint 1:</strong> {hint1}</div>
+              )}
+              {isEasy && wrongGuesses >= 2 && hint2 && (
+                <div className="hint-box"><strong>Hint 2:</strong> {hint2}</div>
+              )}
+
+              <div className="input-group">
+                <CountryDropdown setGuess={setGuess} />
+
+                <button
+                  className="btn primary-btn"
+                  onClick={submitGuess}
+                  disabled={!guess?.trim() || locked}
+                >
+                  Submit Guess
+                </button>
+
+                {/* Next Round Button (Hidden in Beast Mode as it auto-advances) */}
+                {!isBeast && (
+                    <button
+                    className="btn secondary-btn"
+                    onClick={nextRound}
+                    disabled={!locked}
+                    >
+                    Next Round
+                    </button>
+                )}
+              </div>
+
+              <p className="feedback-text" style={{ color: feedback.includes("Correct") ? "#4caf50" : "#ff5252" }}>
+                {feedback}
+              </p>
+            </div>
           </div>
 
-          <p
-            style={{
-              minHeight: 24,
-              marginTop: 16,
-              fontSize: 18,
-              fontWeight: 500,
-            }}
-          >
-            {feedback}
-          </p>
-
-          {isEasy && (
-            <p style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
-              Wrong guesses: {wrongGuesses}/2
-            </p>
+          {locked && (
+            <div className="answer-section">
+              <div className="answer-title">Correct Regions</div>
+              <div className="answer-text">
+                {current.countries.join(", ")}
+              </div>
+            </div>
           )}
+
         </div>
       </div>
     </div>
   );
 }
-
