@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -68,6 +72,7 @@ body {
   width: 95%;
   max-height: 95vh; 
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -401,6 +406,9 @@ body {
   line-height: 1.6;
   color: #fff;
   font-weight: 500;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 @keyframes fadeIn {
