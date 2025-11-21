@@ -4,6 +4,8 @@ import './App.css';
 import bgImage from '../assets/homePageBG.png'; 
 import logoImage from '../assets/logos/logorect.webp'; 
 import CountryDropdown from "./CountryDropdown.jsx";
+import PostRoundPopup from "./endOfRoundDispaly.jsx";
+
 
 export default function DailyPage() {
     const [dailyAnimals, setDailyAnimals] = useState([]);
@@ -15,6 +17,8 @@ export default function DailyPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [roundOver, setRoundOver] = useState(false);
+
 
     const totalRounds = dailyAnimals?.length || 0;
     const gameOver = totalRounds > 0 && round > totalRounds;
@@ -44,6 +48,11 @@ export default function DailyPage() {
         backgroundColor: '#1a1a1a'
     };
 
+    const finishRound = (finalScore) => {
+        setScore(finalScore);
+        setRoundOver(true);
+    };
+
     if (loading) {
         return (
             <div className="app-container" style={containerStyle}>
@@ -70,14 +79,14 @@ export default function DailyPage() {
         );
     }
 
-    if (gameOver) {
+    if (gameOver && !roundOver) {
         return (
             <div className="app-container" style={containerStyle}>
                 <div className="overlay">
-                    <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
+                    <div className="glass-card game-card">
                         <h2 className="title">Daily Complete!</h2>
-                        <p className="subtitle" style={{ marginTop: '1rem' }}>Final Score: {score}</p>
-                        <button className="btn primary-btn" style={{ maxWidth: '300px', marginTop: '2rem' }} onClick={() => navigate('/')}>
+                        <p className="subtitle">Final Score: {score}</p>
+                        <button className="btn primary-btn" onClick={() => navigate('/')}>
                             Back To Home
                         </button>
                     </div>
@@ -112,6 +121,12 @@ export default function DailyPage() {
         setGuess("");
         setLocked(false);
         setFeedback("");
+
+        if(round == totalRounds){
+            finishRound(score);
+            return;
+        }
+
         setRound(r => r + 1);
     }
 
@@ -195,6 +210,12 @@ export default function DailyPage() {
                             </div>
                         </div>
                     )}
+
+                    <PostRoundPopup 
+                        open={roundOver}
+                        score={score}
+                        onClose={() => setRoundOver(false)}
+                    />
 
                 </div>
             </div>
