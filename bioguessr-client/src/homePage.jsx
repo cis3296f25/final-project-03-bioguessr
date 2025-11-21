@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import logoImage from '../assets/logos/logosquare.webp'; 
 import bgImage from '../assets/homePageBG.png'; 
+import LeaderboardToggle from './LeaderboardToggle';
+import LeaderboardDisplay from './LeaderboardDisplay';
 
 function HomePage() {
   const [buttonText, setButtonText] = useState("Play Monkey Mode 🐒");
@@ -72,9 +74,10 @@ function HomePage() {
             <button className="btn primary-btn" onClick={handlePlayClick}>
               {buttonText}
             </button>
-            <button className="btn secondary-btn" onClick={handleDailyClick}>
+            <button className="btn daily-btn" onClick={handleDailyClick}>
               Daily Challenge
             </button>
+            <LeaderboardToggle />
             <button className="btn secondary-btn" onClick={handleRulesClick}>
               {rulesText}
             </button>

@@ -185,6 +185,25 @@ body {
   transform: translateY(-2px);
 }
 
+.daily-btn {
+  background-color: #725c42;
+  color: white;
+}
+.daily-btn:hover {
+  background-color: #5D4C37;
+  transform: translateY(-2px);
+}
+
+.leaderboard-btn {
+  background-color: #fdb515;
+  color: white;
+  border: white;
+}
+.leaderboard-btn:hover {
+  background-color: #FABC31;
+  transform: translateY(-2px);
+}
+
 .modal-btn {
   background-color: #444;
   color: white;
