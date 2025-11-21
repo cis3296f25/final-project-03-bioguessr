@@ -1,3 +1,4 @@
+// bioguessr-client/src/homePage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
@@ -41,6 +42,7 @@ function HomePage() {
   const handleDailyClick = () => navigate('/daily');
   const handlePlayClick = () => setShowPlayMenu(true);
   const handleRulesClick = () => setShowRules(true);
+  const handleArenaClick = () => navigate('/arena'); // ⬅️ NEW
 
   const startEasyMode = () => navigate('/play?mode=easy');
   const startNormalMode = () => navigate('/play');
@@ -74,6 +76,10 @@ function HomePage() {
             </button>
             <button className="btn secondary-btn" onClick={handleDailyClick}>
               Daily Challenge
+            </button>
+            {/* ⬇️ New Arena button */}
+            <button className="btn secondary-btn" onClick={handleArenaClick}>
+              Arena Mode 🩸
             </button>
             <button className="btn secondary-btn" onClick={handleRulesClick}>
               {rulesText}
@@ -110,7 +116,11 @@ function HomePage() {
                 >
                   Monkey Mode 🐒
                 </button>
-                <button className="btn secondary-btn" style={{ backgroundColor: '#d42f1dff'}} onClick={startHardMode}>
+                <button
+                  className="btn secondary-btn"
+                  style={{ backgroundColor: '#d42f1dff'}}
+                  onClick={startHardMode}
+                >
                   Beast Mode 👹
                 </button>
               </div>
@@ -124,7 +134,6 @@ function HomePage() {
       </div>
     </div>
   );
-};
-
+}
 
 export default HomePage;

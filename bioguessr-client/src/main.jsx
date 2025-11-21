@@ -1,10 +1,13 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import HomePage from './homePage.jsx'
-import PlayPage from './playPage.jsx'
-import DailyPage from './dailyPage.jsx'
-import './App.css'
+// bioguessr-client/src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import HomePage from './homePage.jsx';
+import PlayPage from './playPage.jsx';
+import DailyPage from './dailyPage.jsx';
+import ArenaPage from './ArenaPage.jsx';   // ⬅ add this import
+import './App.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -13,7 +16,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/" element={<HomePage />} />
         <Route path="/play" element={<PlayPage />} />
         <Route path="/daily" element={<DailyPage />} />
+        <Route path="/arena" element={<ArenaPage />} />   {/* ⬅ new Arena route */}
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,
-)
+);

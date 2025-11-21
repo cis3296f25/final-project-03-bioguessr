@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 let ANIMALS = [];
 try {
-  const p = path.join(__dirname, "animal_data", "animals.json");
+  const p = path.join(__dirname, "animal_data", "finalAnimals.json");
   if (fs.existsSync(p)) {
     const raw = fs.readFileSync(p, "utf8");
     const data = JSON.parse(raw);
