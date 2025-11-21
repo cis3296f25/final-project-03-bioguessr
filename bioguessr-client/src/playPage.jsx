@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
 import { getFeatureHint, getWeightHint } from "./utils/hints.js";
 import "./App.css";
-import bgImage from '../assets/homePageBG.png'; 
-import logoImage from '../assets/logos/logorect.webp'; 
+import bgImage from '../assets/homePageBG.png';
+import logoImage from '../assets/logos/logorect.webp';
 
 // Normal/Easy use a fixed number of rounds
 const DEMO_TOTAL_ROUNDS = 4;
@@ -51,7 +51,7 @@ export default function PlayPage() {
   const [timeLimit, setTimeLimit] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
 
-  const heartbeatRef = useRef(null); 
+  const heartbeatRef = useRef(null);
 
   const totalRounds = DEMO_TOTAL_ROUNDS;
 
@@ -171,11 +171,11 @@ export default function PlayPage() {
 
     const ratio = Math.max(0, Math.min(1, timeLeft / timeLimit));
     const minRate = 1.0;
-    const maxRate = 1.8; 
-    const rate = maxRate - (maxRate - minRate) * ratio; 
+    const maxRate = 1.8;
+    const rate = maxRate - (maxRate - minRate) * ratio;
 
     audio.playbackRate = rate;
-    audio.play().catch(() => {}); // Ignore play errors
+    audio.play().catch(() => { }); // Ignore play errors
 
     return () => { audio.pause(); };
   }, [isBeast, timeLeft, timeLimit, locked, lives]);
@@ -211,13 +211,13 @@ export default function PlayPage() {
     if (!isBeast || !timeLimit || timeLeft == null) return 1;
     const ratio = Math.max(0, Math.min(1, timeLeft / timeLimit));
     // Scale from 2.1 (start) down to 1.0 (end)
-    const maxScale = 2.1; 
-    const minScale = 1.0; 
+    const maxScale = 2.1;
+    const minScale = 1.0;
     const baseScale = minScale + (maxScale - minScale) * ratio;
-    
+
     // Add pulse when time is low
     const danger = 1 - ratio;
-    const phase = (timeLimit - timeLeft) * 10; 
+    const phase = (timeLimit - timeLeft) * 10;
     const pulse = danger > 0.3 ? 0.03 * Math.sin(phase) * danger : 0;
 
     return baseScale + pulse;
@@ -232,15 +232,15 @@ export default function PlayPage() {
       <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
         <div className="overlay">
           <div className="glass-card game-card" style={{ justifyContent: 'center', minHeight: 'auto' }}>
-            <h2 className="title" style={{color: isBeast && beastDead ? '#ff5252' : '#4caf50'}}>
-                {beastDead ? "DEFEATED" : "Game Over"}
+            <h2 className="title" style={{ color: isBeast && beastDead ? '#ff5252' : '#4caf50' }}>
+              {beastDead ? "DEFEATED" : "Game Over"}
             </h2>
             <p className="subtitle" style={{ marginTop: '1rem' }}>
-                {beastDead ? "You ran out of lives." : "All rounds completed."}
+              {beastDead ? "You ran out of lives." : "All rounds completed."}
             </p>
-            <div className="game-stats" style={{flexDirection: 'column', gap: '0.5rem', marginTop: '1rem'}}>
-                <div>Final Score: <strong>{score}</strong></div>
-                {isBeast && <div>Highest Streak: <strong>{streak}</strong></div>}
+            <div className="game-stats" style={{ flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+              <div>Final Score: <strong>{score}</strong></div>
+              {isBeast && <div>Highest Streak: <strong>{streak}</strong></div>}
             </div>
             <button className="btn primary-btn" style={{ maxWidth: '300px', marginTop: '2rem' }} onClick={() => navigate("/")}>
               Back To Home
@@ -286,15 +286,15 @@ export default function PlayPage() {
 
     if (correct) {
       const userGuessClean = guess.trim();
-      
+
       if (isBeast) {
         // Beast Scoring
         const newStreak = streak + 1;
         const basePoints = 100;
         const roundBonus = Math.max(0, (round - 1) * 5);
         const timeRatio = timeLimit && timeLeft != null && timeLimit > 0
-            ? Math.max(0, Math.min(1, timeLeft / timeLimit)) : 0;
-        const timeBonus = Math.round(20 * timeRatio); 
+          ? Math.max(0, Math.min(1, timeLeft / timeLimit)) : 0;
+        const timeBonus = Math.round(20 * timeRatio);
 
         const gained = (basePoints + roundBonus + timeBonus) * newStreak;
 
@@ -329,7 +329,7 @@ export default function PlayPage() {
         const next = n + 1;
         if (next >= 3) {
           setLocked(true);
-          setFeedback("Not quite."); 
+          setFeedback("Not quite.");
         } else {
           setFeedback("Try again!");
         }
@@ -337,7 +337,7 @@ export default function PlayPage() {
       });
     } else {
       setLocked(true);
-      setFeedback("Not quite."); 
+      setFeedback("Not quite.");
     }
   }
 
@@ -368,32 +368,32 @@ export default function PlayPage() {
     <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
       <div className="overlay">
         <div className="glass-card game-card">
-          
+
           {/* HEADER */}
           <header className="game-header">
             <img src={logoImage} className="header-logo" alt="BioGuessr" />
-            
+
             <div className="game-stats">
               <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
-              
+
               {isBeast ? (
-                  <>
-                    <div>Round: {round}</div>
-                    <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
-                    <div>Lives: {Array(lives).fill("❤️").join("")}</div>
-                    <div>Streak: x{streak}</div>
-                    <div style={{ fontWeight: 'bold', color: timerColor, minWidth: '60px' }}>
-                         {timeLeft != null ? timeLeft.toFixed(1) + "s" : "--"}
-                    </div>
-                  </>
+                <>
+                  <div>Round: {round}</div>
+                  <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
+                  <div>Lives: {Array(lives).fill("❤️").join("")}</div>
+                  <div>Streak: x{streak}</div>
+                  <div style={{ fontWeight: 'bold', color: timerColor, minWidth: '60px' }}>
+                    {timeLeft != null ? timeLeft.toFixed(1) + "s" : "--"}
+                  </div>
+                </>
               ) : (
-                  <>
-                    <div>Round: {round} / {totalRounds}</div>
-                    <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
-                  </>
+                <>
+                  <div>Round: {round} / {totalRounds}</div>
+                  <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
+                </>
               )}
             </div>
-            
+
             <button className="btn secondary-btn" style={{ width: 'auto', padding: '0.5em 1em' }} onClick={restart}>
               Exit
             </button>
@@ -401,19 +401,18 @@ export default function PlayPage() {
 
           {/* MAIN CONTENT */}
           <div className="game-layout">
-            
+
             {/* Left Column: Image */}
-            <div className="game-image-section">
+            <div style={isBeast ? { border: '2px solid ' + timerColor } : {}} className="game-image-section">
               {imgSrc ? (
                 <img
                   src={imgSrc}
                   alt="Animal to guess"
                   className="game-image"
                   // Apply zoom style if Beast Mode
-                  style={isBeast ? { 
-                      transform: `scale(${zoomScale})`,
-                      transition: 'transform 0.1s linear',
-                      border: '2px solid ' + timerColor // Border pulses color with time
+                  style={isBeast ? {
+                    transform: `scale(${zoomScale})`,
+                    transition: 'transform 0.1s linear',
                   } : {}}
                   onError={(e) => {
                     e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable";
@@ -428,12 +427,12 @@ export default function PlayPage() {
 
             {/* Right Column: Controls */}
             <div className="game-controls-section">
-              
+
               <div style={{ marginBottom: '1rem' }}>
-                  <div className="animal-name-label">Scientific Name</div>
-                  <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
-                      {current.scientificName}
-                  </div>
+                <div className="animal-name-label">Scientific Name</div>
+                <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
+                  {current.scientificName}
+                </div>
               </div>
 
               <div>
@@ -464,13 +463,13 @@ export default function PlayPage() {
 
                 {/* Next Round Button (Hidden in Beast Mode as it auto-advances) */}
                 {!isBeast && (
-                    <button
+                  <button
                     className="btn secondary-btn"
                     onClick={nextRound}
                     disabled={!locked}
-                    >
+                  >
                     Next Round
-                    </button>
+                  </button>
                 )}
               </div>
 
@@ -491,6 +490,6 @@ export default function PlayPage() {
 
         </div>
       </div>
-    </div>
+    </div >
   );
 }
