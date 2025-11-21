@@ -11,11 +11,14 @@ import {
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.use(express.json()); 
+
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION,
@@ -137,7 +140,13 @@ app.listen(PORT, () => {
 
 //POST request to upload a score to the leaderboard 
 app.post("/api/updateLeaderboard", async (req, res) => {
+  
+
+  console.log("BODY RECEIVED:", req.body);
+
   const { initials, score } = req.body;
+
+  console.log("got here with: " + req.body);
 
   if (!initials || score === undefined) { //validate input
     return res.status(400).json({
