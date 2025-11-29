@@ -152,63 +152,59 @@ export default function DailyPage() {
                     </header>
 
                     <div className="game-layout">
-                        <div className="game-image-section">
-                            <img
-                                key={current.imageUrl || round} 
-                                src={current.imageUrl}
-                                alt="Animal to guess"
-                                className="game-image"
-                                onError={(e) => { e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable"; }}
-                            />
+                        <div className="game-image-wrapper">
+                            <div className="game-image-section">
+                                <img
+                                    key={current.imageUrl || round} 
+                                    src={current.imageUrl}
+                                    alt="Animal to guess"
+                                    className="game-image"
+                                    onError={(e) => { e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable"; }}
+                                />
+                            </div>
+                            {feedback && (
+                                <div className={`feedback-overlay ${feedback.includes("Correct") ? "feedback-correct" : "feedback-wrong"}`}>
+                                    <span className="feedback-icon">{feedback.includes("Correct") ? "✓" : "✗"}</span>
+                                    <span className="feedback-message">{feedback}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="game-controls-section">
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div className="animal-info">
                                 <div className="animal-name-label">Scientific Name</div>
-                                <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
-                                    {current.scientificName}
-                                </div>
+                                <div className="scientific-name">{current.scientificName}</div>
                             </div>
 
-                            <div>
+                            <div className="animal-info">
                                 <div className="animal-name-label">Common Name</div>
                                 <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
                                     {locked ? current.name : "?"}
                                 </div>
                             </div>
 
-                            <div className="input-group">
-                                <CountryDropdown setGuess={setGuess} disabled={locked} />
-
-                                <button
-                                    className="btn primary-btn"
-                                    onClick={submitGuess}
-                                    disabled={!guess?.trim() || locked}
-                                >
-                                    Submit Guess
-                                </button>
-
-                                <button
-                                    className="btn secondary-btn"
-                                    onClick={nextRound}
-                                    disabled={!locked}
-                                >
-                                    Next Round
-                                </button>
-                            </div>
-
-                            <p className="feedback-text" style={{ color: feedback.includes("Correct") ? "#4caf50" : "#ff5252" }}>
-                                {feedback}
-                            </p>
+                            {locked ? (
+                                <div className="answer-reveal">
+                                    <div className="answer-label">Correct Regions</div>
+                                    <RegionsList countries={current.countries} />
+                                    <button className="btn primary-btn" onClick={nextRound}>
+                                        Next Round →
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="input-group">
+                                    <CountryDropdown setGuess={setGuess} disabled={locked} />
+                                    <button
+                                        className="btn primary-btn"
+                                        onClick={submitGuess}
+                                        disabled={!guess?.trim()}
+                                    >
+                                        Submit Guess
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    {locked && (
-                        <div className="answer-section">
-                            <div className="answer-title">Correct Regions</div>
-    <RegionsList countries={current.countries} />
-                        </div>
-                    )}
 
                     <PostRoundPopup 
                         open={roundOver}
