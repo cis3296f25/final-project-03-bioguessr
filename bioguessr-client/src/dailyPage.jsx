@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import bgImage from '../assets/homePageBG.png'; 
-import logoImage from '../assets/logos/logorect.webp'; 
 import CountryDropdown from "./CountryDropdown.jsx";
 import PostRoundPopup from "./endOfRoundDispaly.jsx";
 import RegionsList from "./RegionsList.jsx";
+import GameHeader from "./components/GameHeader.jsx";
+import GameImage from "./components/GameImage.jsx";
+import AnimalInfo from "./components/AnimalInfo.jsx";
 
 
 export default function DailyPage() {
@@ -139,49 +141,26 @@ export default function DailyPage() {
         <div className="app-container" style={containerStyle}>
             <div className="overlay">
                 <div className="glass-card game-card">
-                    <header className="game-header">
-                        <img src={logoImage} className="header-logo" alt="BioGuessr" />
-                        <div className="game-stats">
-                            <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
-                            <div>Round: {round} / {totalRounds}</div>
-                            <div>Mode: <span style={{ color: '#ffd700' }}>Daily</span></div>
-                        </div>
-                        <button className="btn secondary-btn" style={{ width: 'auto', padding: '0.5em 1em' }} onClick={restart}>
-                            Exit
-                        </button>
-                    </header>
+                    <GameHeader
+                        stats={
+                            <>
+                                <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
+                                <div>Round: {round} / {totalRounds}</div>
+                                <div>Mode: <span style={{ color: '#ffd700' }}>Daily</span></div>
+                            </>
+                        }
+                        onExit={restart}
+                    />
 
                     <div className="game-layout">
-                        <div className="game-image-wrapper">
-                            <div className="game-image-section">
-                                <img
-                                    key={current.imageUrl || round} 
-                                    src={current.imageUrl}
-                                    alt="Animal to guess"
-                                    className="game-image"
-                                    onError={(e) => { e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable"; }}
-                                />
-                            </div>
-                            {feedback && (
-                                <div className={`feedback-overlay ${feedback.includes("Correct") ? "feedback-correct" : "feedback-wrong"}`}>
-                                    <span className="feedback-icon">{feedback.includes("Correct") ? "✓" : "✗"}</span>
-                                    <span className="feedback-message">{feedback}</span>
-                                </div>
-                            )}
-                        </div>
+                        <GameImage src={current.imageUrl} feedback={feedback} />
 
                         <div className="game-controls-section">
-                            <div className="animal-info">
-                                <div className="animal-name-label">Scientific Name</div>
-                                <div className="scientific-name">{current.scientificName}</div>
-                            </div>
-
-                            <div className="animal-info">
-                                <div className="animal-name-label">Common Name</div>
-                                <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
-                                    {locked ? current.name : "?"}
-                                </div>
-                            </div>
+                            <AnimalInfo
+                                scientificName={current.scientificName}
+                                commonName={current.name}
+                                revealed={locked}
+                            />
 
                             {locked ? (
                                 <div className="answer-reveal">

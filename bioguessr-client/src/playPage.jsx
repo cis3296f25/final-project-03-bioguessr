@@ -3,9 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
 import { getFeatureHint, getWeightHint } from "./utils/hints.js";
 import RegionsList from "./RegionsList.jsx";
+import GameHeader from "./components/GameHeader.jsx";
+import GameImage from "./components/GameImage.jsx";
+import AnimalInfo from "./components/AnimalInfo.jsx";
 import "./App.css";
 import bgImage from '../assets/homePageBG.png';
-import logoImage from '../assets/logos/logorect.webp';
 
 // Normal/Easy use a fixed number of rounds
 const DEMO_TOTAL_ROUNDS = 4;
@@ -370,80 +372,48 @@ export default function PlayPage() {
       <div className="overlay">
         <div className="glass-card game-card">
 
-          {/* HEADER */}
-          <header className="game-header">
-            <img src={logoImage} className="header-logo" alt="BioGuessr" />
-
-            <div className="game-stats">
-              <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
-
-              {isBeast ? (
-                <>
-                  <div>Round: {round}</div>
-                  <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
-                  <div>Lives: {Array(lives).fill("❤️").join("")}</div>
-                  <div>Streak: x{streak}</div>
-                  <div style={{ fontWeight: 'bold', color: timerColor, minWidth: '60px' }}>
-                    {timeLeft != null ? timeLeft.toFixed(1) + "s" : "--"}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>Round: {round} / {totalRounds}</div>
-                  <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
-                </>
-              )}
-            </div>
-
-            <button className="btn secondary-btn" style={{ width: 'auto', padding: '0.5em 1em' }} onClick={restart}>
-              Exit
-            </button>
-          </header>
+          <GameHeader
+            stats={
+              <>
+                <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{score}</span></div>
+                {isBeast ? (
+                  <>
+                    <div>Round: {round}</div>
+                    <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
+                    <div>Lives: {Array(lives).fill("❤️").join("")}</div>
+                    <div>Streak: x{streak}</div>
+                    <div style={{ fontWeight: 'bold', color: timerColor, minWidth: '60px' }}>
+                      {timeLeft != null ? timeLeft.toFixed(1) + "s" : "--"}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>Round: {round} / {totalRounds}</div>
+                    <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
+                  </>
+                )}
+              </>
+            }
+            onExit={restart}
+          />
 
           <div className="game-layout">
-            <div className="game-image-wrapper">
-              <div style={isBeast ? { border: '2px solid ' + timerColor } : {}} className="game-image-section">
-                {imgSrc ? (
-                  <img
-                    src={imgSrc}
-                    alt="Animal to guess"
-                    className="game-image"
-                    style={isBeast ? {
-                      transform: `scale(${zoomScale})`,
-                      transition: 'transform 0.1s linear',
-                    } : {}}
-                    onError={(e) => {
-                      e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable";
-                    }}
-                  />
-                ) : (
-                  <div className="game-image-placeholder">
-                    (No image provided)
-                  </div>
-                )}
-              </div>
-
-              {feedback && (
-                <div className={`feedback-overlay ${feedback.includes("Correct") ? "feedback-correct" : "feedback-wrong"}`}>
-                  <span className="feedback-icon">{feedback.includes("Correct") ? "✓" : "✗"}</span>
-                  <span className="feedback-message">{feedback}</span>
-                </div>
-              )}
-            </div>
+            <GameImage
+              src={imgSrc}
+              feedback={feedback}
+              wrapperStyle={isBeast ? { border: '2px solid ' + timerColor } : {}}
+              imageStyle={isBeast ? {
+                transform: `scale(${zoomScale})`,
+                transition: 'transform 0.1s linear',
+              } : {}}
+            />
 
             <div className="game-controls-section">
-
-              <div className="animal-info">
-                <div className="animal-name-label">Scientific Name</div>
-                <div className="scientific-name">{current.scientificName}</div>
-              </div>
-
-              <div className="animal-info">
-                <div className="animal-name-label">Common Name</div>
-                <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
-                  {locked ? current.name : "?"}
-                </div>
-              </div>
+              <AnimalInfo
+                scientificName={current.scientificName}
+                commonName={current.name}
+                revealed={locked}
+              />
 
               {isEasy && wrongGuesses >= 1 && hint1 && (
                 <div className="hint-box"><strong>Hint 1:</strong> {hint1}</div>
