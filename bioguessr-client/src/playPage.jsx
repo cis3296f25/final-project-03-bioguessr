@@ -399,50 +399,51 @@ export default function PlayPage() {
             </button>
           </header>
 
-          {/* MAIN CONTENT */}
           <div className="game-layout">
+            <div className="game-image-wrapper">
+              <div style={isBeast ? { border: '2px solid ' + timerColor } : {}} className="game-image-section">
+                {imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt="Animal to guess"
+                    className="game-image"
+                    style={isBeast ? {
+                      transform: `scale(${zoomScale})`,
+                      transition: 'transform 0.1s linear',
+                    } : {}}
+                    onError={(e) => {
+                      e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable";
+                    }}
+                  />
+                ) : (
+                  <div className="game-image-placeholder">
+                    (No image provided)
+                  </div>
+                )}
+              </div>
 
-            {/* Left Column: Image */}
-            <div style={isBeast ? { border: '2px solid ' + timerColor } : {}} className="game-image-section">
-              {imgSrc ? (
-                <img
-                  src={imgSrc}
-                  alt="Animal to guess"
-                  className="game-image"
-                  // Apply zoom style if Beast Mode
-                  style={isBeast ? {
-                    transform: `scale(${zoomScale})`,
-                    transition: 'transform 0.1s linear',
-                  } : {}}
-                  onError={(e) => {
-                    e.currentTarget.src = "https://placehold.co/800x500?text=Image+unavailable";
-                  }}
-                />
-              ) : (
-                <div className="game-image-placeholder">
-                  (No image provided)
+              {feedback && (
+                <div className={`feedback-overlay ${feedback.includes("Correct") ? "feedback-correct" : "feedback-wrong"}`}>
+                  <span className="feedback-icon">{feedback.includes("Correct") ? "✓" : "✗"}</span>
+                  <span className="feedback-message">{feedback}</span>
                 </div>
               )}
             </div>
 
-            {/* Right Column: Controls */}
             <div className="game-controls-section">
 
-              <div style={{ marginBottom: '1rem' }}>
+              <div className="animal-info">
                 <div className="animal-name-label">Scientific Name</div>
-                <div style={{ fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 600, color: '#4caf50' }}>
-                  {current.scientificName}
-                </div>
+                <div className="scientific-name">{current.scientificName}</div>
               </div>
 
-              <div>
+              <div className="animal-info">
                 <div className="animal-name-label">Common Name</div>
                 <div className={locked ? "animal-name-revealed" : "animal-name-hidden"}>
                   {locked ? current.name : "?"}
                 </div>
               </div>
 
-              {/* Hints (Only show in Easy Mode) */}
               {isEasy && wrongGuesses >= 1 && hint1 && (
                 <div className="hint-box"><strong>Hint 1:</strong> {hint1}</div>
               )}
@@ -450,43 +451,30 @@ export default function PlayPage() {
                 <div className="hint-box"><strong>Hint 2:</strong> {hint2}</div>
               )}
 
-              <div className="input-group">
-                <CountryDropdown setGuess={setGuess} />
-
-                <button
-                  className="btn primary-btn"
-                  onClick={submitGuess}
-                  disabled={!guess?.trim() || locked}
-                >
-                  Submit Guess
-                </button>
-
-                {/* Next Round Button (Hidden in Beast Mode as it auto-advances) */}
-                {!isBeast && (
+              {locked ? (
+                <div className="answer-reveal">
+                  <div className="answer-label">Correct Regions</div>
+                  <div className="answer-countries">{current.countries.join(", ")}</div>
+                  {!isBeast && (
+                    <button className="btn primary-btn" onClick={nextRound}>
+                      Next Round →
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="input-group">
+                  <CountryDropdown setGuess={setGuess} />
                   <button
-                    className="btn secondary-btn"
-                    onClick={nextRound}
-                    disabled={!locked}
+                    className="btn primary-btn"
+                    onClick={submitGuess}
+                    disabled={!guess?.trim()}
                   >
-                    Next Round
+                    Submit Guess
                   </button>
-                )}
-              </div>
-
-              <p className="feedback-text" style={{ color: feedback.includes("Correct") ? "#4caf50" : "#ff5252" }}>
-                {feedback}
-              </p>
+                </div>
+              )}
             </div>
           </div>
-
-          {locked && (
-            <div className="answer-section">
-              <div className="answer-title">Correct Regions</div>
-              <div className="answer-text">
-                {current.countries.join(", ")}
-              </div>
-            </div>
-          )}
 
         </div>
       </div>
