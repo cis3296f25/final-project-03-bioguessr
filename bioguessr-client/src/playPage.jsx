@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CountryDropdown from "./CountryDropdown.jsx";
 import { getFeatureHint, getWeightHint } from "./utils/hints.js";
+import RegionsList from "./RegionsList.jsx";
 import "./App.css";
 import bgImage from '../assets/homePageBG.png';
 import logoImage from '../assets/logos/logorect.webp';
@@ -454,7 +455,7 @@ export default function PlayPage() {
               {locked ? (
                 <div className="answer-reveal">
                   <div className="answer-label">Correct Regions</div>
-                  <div className="answer-countries">{current.countries.join(", ")}</div>
+                  <RegionsList countries={current.countries} />
                   {!isBeast && (
                     <button className="btn primary-btn" onClick={nextRound}>
                       Next Round →

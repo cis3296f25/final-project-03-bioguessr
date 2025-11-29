@@ -5,6 +5,7 @@ import bgImage from '../assets/homePageBG.png';
 import logoImage from '../assets/logos/logorect.webp'; 
 import CountryDropdown from "./CountryDropdown.jsx";
 import PostRoundPopup from "./endOfRoundDispaly.jsx";
+import RegionsList from "./RegionsList.jsx";
 
 
 export default function DailyPage() {
@@ -205,9 +206,7 @@ export default function DailyPage() {
                     {locked && (
                         <div className="answer-section">
                             <div className="answer-title">Correct Regions</div>
-                            <div className="answer-text">
-                                {current.countries.join(", ")}
-                            </div>
+    <RegionsList countries={current.countries} />
                         </div>
                     )}
 
