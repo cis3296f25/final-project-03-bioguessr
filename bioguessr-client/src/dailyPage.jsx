@@ -106,6 +106,7 @@ export default function DailyPage() {
         if (correct) setScore(s => s + 100);
         setLocked(true);
         setFeedback(correct ? "Correct! +100" : "Not quite.");
+        setGuess("");
     }
 
     function nextRound() {
@@ -162,7 +163,7 @@ export default function DailyPage() {
                             </div>
 
                             <div className="input-group">
-                                <CountryDropdown setGuess={setGuess} disabled={locked} />
+                                <CountryDropdown setGuess={setGuess} value={guess} disabled={locked} />
 
                                 <button
                                     className="btn primary-btn"

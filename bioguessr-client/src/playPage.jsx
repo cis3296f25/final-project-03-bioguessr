@@ -285,7 +285,7 @@ export default function PlayPage() {
     );
 
     if (correct) {
-      const userGuessClean = guess.trim();
+      setGuess(""); // Clear the input after correct guess
 
       if (isBeast) {
         // Beast Scoring
@@ -312,6 +312,8 @@ export default function PlayPage() {
     }
 
     // WRONG ANSWER
+    setGuess("");
+
     if (isBeast) {
       const penalty = Math.floor(score / 3);
       const newScore = Math.max(0, score - penalty);
@@ -451,7 +453,7 @@ export default function PlayPage() {
               )}
 
               <div className="input-group">
-                <CountryDropdown setGuess={setGuess} />
+                <CountryDropdown setGuess={setGuess} value={guess} disabled={locked} />
 
                 <button
                   className="btn primary-btn"

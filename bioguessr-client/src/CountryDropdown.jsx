@@ -1,11 +1,17 @@
 import React, { useMemo, useState, useEffect } from "react";
 import Fuse from "fuse.js";
 
-export default function CountryDropdown({ setGuess }) {
+export default function CountryDropdown({ setGuess, value = "", disabled = false }) {
   const [query, setQuery] = useState("");
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    if (value === "" && query !== "") {
+      setQuery("");
+    }
+  }, [value]);
 
   useEffect(() => {
     (async () => {
@@ -38,13 +44,14 @@ export default function CountryDropdown({ setGuess }) {
       <input
         type="text"
         value={query}
+        disabled={disabled}
         onChange={(e) => {
           const v = e.target.value;
           setQuery(v);
           setShowDropdown(true);
-          setGuess(v);             // <-- keep parent guess in sync while typing
+          setGuess(v);
         }}
-        onFocus={() => setShowDropdown(true)}
+        onFocus={() => !disabled && setShowDropdown(true)}
         onBlur={() => setTimeout(() => setShowDropdown(false), 100)}
         style={{ paddingTop: 10, paddingBottom: 10, textAlign: "center", fontSize: 16, width: "100%", boxSizing: "border-box" }}
         placeholder="Type a country (name or code)…"
