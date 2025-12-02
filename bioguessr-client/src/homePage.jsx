@@ -62,7 +62,6 @@ function HomePage() {
             <p className="hero-subtitle">Test your wildlife knowledge across the globe</p>
           </div>
 
-          {/* Mode Selection */}
           <div className="modes-row">
             {GAME_MODES.map((mode) => (
               <button
@@ -82,7 +81,6 @@ function HomePage() {
             ))}
           </div>
 
-          {/* Actions Row */}
           <div className="actions-row">
             <button className="featured-action" onClick={() => navigate('/daily')}>
               <div className="featured-action-left">
@@ -96,7 +94,6 @@ function HomePage() {
             </button>
           </div>
 
-          {/* Footer Links */}
           <div className="home-footer">
             <LeaderboardToggle />
             <button className="link-btn" onClick={() => setShowRules(true)}>
@@ -105,7 +102,6 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Rules Modal */}
         {showRules && (
           <div className="modal-overlay" onClick={() => setShowRules(false)}>
             <div className="modal-content rules-modal" onClick={(e) => e.stopPropagation()}>
