@@ -50,7 +50,6 @@ export default function CountryDropdown({ setGuess, onSubmit, value = "" }) {
           selectCountry(results[0]);
           break;
         case "Enter":
-          console.log("hi");
           onSubmit();
           break;
       }
