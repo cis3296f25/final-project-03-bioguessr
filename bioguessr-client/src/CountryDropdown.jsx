@@ -105,8 +105,9 @@ export default function CountryDropdown({ setGuess, value = "" }) {
         onKeyDown={handleKeyDown}
         placeholder="Type a country..."
         autoComplete="off"
+        autoFocus
       />
-      
+
       {query && results.length > 0 && (
         <span className="tab-hint">Tab to complete</span>
       )}
