@@ -51,10 +51,12 @@ export default function DailyPage() {
     if (correct) setScore(s => s + 100);
     setLocked(true);
     setFeedback(correct ? "Correct! +100" : "Not quite.");
+
+    if (!correct) setGuess("");
   };
 
   const handleNextRound = () => {
-    setGuess("");
+    setGuess("")
     setLocked(false);
     setFeedback("");
     if (round === totalRounds) {

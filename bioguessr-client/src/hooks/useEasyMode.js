@@ -5,7 +5,6 @@ export default function useEasyMode(game, { enabled = false }) {
   const [wrongGuesses, setWrongGuesses] = useState(0);
   const { current, setLocked, setFeedback } = game;
 
-  // Reset wrong guesses when round changes (new animal)
   useEffect(() => {
     if (current) {
       setWrongGuesses(0);
@@ -23,7 +22,7 @@ export default function useEasyMode(game, { enabled = false }) {
   }, [enabled, current, wrongGuesses]);
 
   const handleWrongGuess = useCallback(() => {
-    setWrongGuesses(n => {
+    setWrongGuesses((n) => {
       const next = n + 1;
       if (next >= 3) {
         setLocked(true);
@@ -59,4 +58,3 @@ export default function useEasyMode(game, { enabled = false }) {
     resetWrongGuesses,
   };
 }
-
