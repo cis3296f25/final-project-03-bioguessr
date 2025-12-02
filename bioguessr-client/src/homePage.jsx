@@ -1,125 +1,134 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
-import logoImage from '../assets/logos/logosquare.webp'; 
+import logoSquare from '../assets/logos/logosquare.webp'; 
 import bgImage from '../assets/homePageBG.png'; 
 import LeaderboardToggle from './LeaderboardToggle';
-import LeaderboardDisplay from './LeaderboardDisplay';
+
+const GAME_MODES = [
+  {
+    id: 'easy',
+    name: 'Guppy',
+    icon: '🐟',
+    color: '#4caf50',
+    desc: 'Beginner friendly',
+    detail: 'Get hints when you guess wrong',
+    path: '/play?mode=easy',
+  },
+  {
+    id: 'normal',
+    name: 'Monkey',
+    icon: '🐒',
+    color: '#2196f3',
+    desc: 'Classic mode',
+    detail: '4 rounds, no assistance',
+    path: '/play',
+  },
+  {
+    id: 'beast',
+    name: 'Beast',
+    icon: '👹',
+    color: '#f44336',
+    desc: 'For experts',
+    detail: 'Timed rounds, 3 lives, streaks',
+    path: '/play?mode=beast',
+  },
+];
 
 function HomePage() {
-  const [buttonText, setButtonText] = useState("Play Monkey Mode 🐒");
   const [showRules, setShowRules] = useState(false);
-  const [showPlayMenu, setShowPlayMenu] = useState(false); 
-  const [rulesText, setRulesText] = useState('Rules');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const buttonRes = await fetch('/api/playButton');
-        if (buttonRes.ok) setButtonText(await buttonRes.text());
-
-        const rulesRes = await fetch('/api/rulesButton');
-        if (rulesRes.ok) setRulesText(await rulesRes.text());
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
-    };
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']");
     if (link) {
-      link.href = logoImage;
+      link.href = logoSquare;
     } else {
       const newLink = document.createElement('link');
       newLink.rel = 'icon';
-      newLink.href = logoImage;
+      newLink.href = logoSquare;
       document.head.appendChild(newLink);
     }
   }, []);
 
-  const handleDailyClick = () => navigate('/daily');
-  const handlePlayClick = () => setShowPlayMenu(true);
-  const handleRulesClick = () => setShowRules(true);
-
-  const startEasyMode = () => navigate('/play?mode=easy');
-  const startNormalMode = () => navigate('/play');
-  const startHardMode = () => navigate('/play?mode=beast');
-
-  const subtitleText = "How well do you know Biology?";
-
   return (
     <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
       <div className="overlay">
-        <div className="glass-card home-card">
-          
-          <h1 className="title">
-            <span className="text-bio">Bio</span>
-            <span className="text-guessr">Guessr</span>
-          </h1>
-          
-          <img src={logoImage} alt="BioGuessr Logo" className="main-logo" />
-          
-          <p className="subtitle wave-text">
-            {subtitleText.split("").map((char, index) => (
-              <span key={index} style={{ animationDelay: `${index * 0.04}s` }}>
-                {char === " " ? "\u00A0" : char}
-              </span>
+        <div className="home-modern">
+          {/* Hero */}
+          <div className="hero-section">
+            <img src={logoSquare} alt="BioGuessr" className="hero-logo" />
+            <h1 className="hero-title">
+              <span className="text-bio">Bio</span>
+              <span className="text-guessr">Guessr</span>
+            </h1>
+            <p className="hero-subtitle">Test your wildlife knowledge across the globe</p>
+          </div>
+
+          {/* Mode Selection */}
+          <div className="modes-row">
+            {GAME_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                className="mode-tile"
+                onClick={() => navigate(mode.path)}
+              >
+                <div className="mode-tile-icon" style={{ background: `linear-gradient(135deg, ${mode.color}22, ${mode.color}44)` }}>
+                  <span>{mode.icon}</span>
+                </div>
+                <div className="mode-tile-info">
+                  <span className="mode-tile-name" style={{ color: mode.color }}>{mode.name}</span>
+                  <span className="mode-tile-desc">{mode.desc}</span>
+                </div>
+                <span className="mode-tile-detail">{mode.detail}</span>
+              </button>
             ))}
-          </p>
-          
-          <div className="button-group">
-            <button className="btn primary-btn" onClick={handlePlayClick}>
-              {buttonText}
+          </div>
+
+          {/* Actions Row */}
+          <div className="actions-row">
+            <button className="featured-action" onClick={() => navigate('/daily')}>
+              <div className="featured-action-left">
+                <span className="featured-icon">📅</span>
+                <div>
+                  <span className="featured-title">Daily Challenge</span>
+                  <span className="featured-desc">New puzzle every day • Compete globally</span>
+                </div>
+              </div>
+              <span className="featured-arrow">→</span>
             </button>
-            <button className="btn daily-btn" onClick={handleDailyClick}>
-              Daily Challenge
-            </button>
+          </div>
+
+          {/* Footer Links */}
+          <div className="home-footer">
             <LeaderboardToggle />
-            <button className="btn secondary-btn" onClick={handleRulesClick}>
-              {rulesText}
+            <button className="link-btn" onClick={() => setShowRules(true)}>
+              How to Play
             </button>
           </div>
         </div>
 
+        {/* Rules Modal */}
         {showRules && (
           <div className="modal-overlay" onClick={() => setShowRules(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content rules-modal" onClick={(e) => e.stopPropagation()}>
               <h2>How To Play</h2>
-              <p>You will be shown a picture of an animal along with its scientific name.</p>
-              <p>Your job is to correctly identify the region(s) that the animal can be found in by selecting a country from the dropdown menu provided.</p>
-              <p>Correct guesses will be rewarded with points, while incorrect guesses will not reward any points.</p>
-              <button className="btn modal-btn" onClick={() => setShowRules(false)}>Close</button>
-            </div>
-          </div>
-        )}
-
-        {showPlayMenu && (
-          <div className="modal-overlay" onClick={() => setShowPlayMenu(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>Select Difficulty</h2>
-              <p>Choose your challenge level:</p>
-              
-              <div className="button-group" style={{ marginTop: '20px' }}>
-                <button className="btn primary-btn" onClick={startEasyMode}>
-                  Guppy Mode 🐟
-                </button>
-                <button 
-                  className="btn primary-btn" 
-                  style={{ backgroundColor: '#2196f3' }} 
-                  onClick={startNormalMode}
-                >
-                  Monkey Mode 🐒
-                </button>
-                <button className="btn secondary-btn" style={{ backgroundColor: '#d42f1dff'}} onClick={startHardMode}>
-                  Beast Mode 👹
-                </button>
+              <div className="rules-list">
+                <div className="rule-item">
+                  <span className="rule-number">1</span>
+                  <p>You'll see a picture of an animal and its scientific name.</p>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">2</span>
+                  <p>Guess which country or region the animal can be found in.</p>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">3</span>
+                  <p>Correct guesses earn points. Build streaks for bonus multipliers!</p>
+                </div>
               </div>
-
-              <button className="btn modal-btn" onClick={() => setShowPlayMenu(false)}>
-                Cancel
+              <button className="btn primary-btn" onClick={() => setShowRules(false)}>
+                Got it!
               </button>
             </div>
           </div>
@@ -127,7 +136,6 @@ function HomePage() {
       </div>
     </div>
   );
-};
-
+}
 
 export default HomePage;

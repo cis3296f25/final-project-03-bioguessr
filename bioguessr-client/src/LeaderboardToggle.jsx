@@ -7,8 +7,8 @@ export default function LeaderboardToggle() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="btn leaderboard-btn">
-           🏆 Daily Leaderboard 🏆
+      <button onClick={() => setOpen(true)} className="link-btn">
+        🏆 Leaderboard
       </button>
 
       <LeaderboardDisplay
