@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import './App.css';
 
 export default function LeaderboardDisplay({ open, onClose }) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -15,7 +16,7 @@ export default function LeaderboardDisplay({ open, onClose }) {
       console.log(data);
       setLeaderboard(data.leaderboard || []);
     } catch (err) {
-      console.error("hello:", err);
+      console.error("Error:", err);
     }
   };
 
@@ -44,7 +45,7 @@ export default function LeaderboardDisplay({ open, onClose }) {
           </tbody>
         </table>
 
-        <button onClick={onClose}>Close</button>
+        <button onClick={onClose} className="btn modal-btn">Close</button>
       </div>
     </div>
   );
