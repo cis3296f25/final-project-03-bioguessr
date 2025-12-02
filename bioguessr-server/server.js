@@ -53,23 +53,6 @@ try {
   console.error("[server] Failed to load animals.json:", err);
 }
 
-const DEMO = [
-  { 
-    name: "Krill", 
-    scientificName: "Euphausiacea",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Krill_anatomy.jpg/1200px-Krill_anatomy.jpg",
-    countries: ["Antarctica", "Ocean"],
-    characteristics: { diet: "Plankton" }
-  },
-  { 
-    name: "Beaglier", 
-    scientificName: "Canis lupus familiaris",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Beaglier_puppy.jpg/800px-Beaglier_puppy.jpg",
-    countries: ["Australia"],
-    characteristics: { diet: "Omnivore" }
-  },
-];
-
 function normalizeAnimal(animal) {
   return {
     name: animal.name,
