@@ -92,6 +92,7 @@ export default function DailyPage() {
   if (!current) return <LoadingScreen message={`Loading Round ${round}...`} />;
 
   return (
+    <>
     <GameLayout>
       <GameHeader
         stats={
@@ -124,14 +125,16 @@ export default function DailyPage() {
               value={guess}
             />
           )}
+ 
         </div>
       </div>
-
+         
+      </GameLayout>
       <PostRoundPopup
         open={roundOver}
         score={score}
         onClose={() => setRoundOver(false)}
       />
-    </GameLayout>
+    </>
   );
 }
