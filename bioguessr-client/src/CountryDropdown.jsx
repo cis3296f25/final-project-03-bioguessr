@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import Fuse from "fuse.js";
 
-export default function CountryDropdown({ setGuess, value = "" }) {
+export default function CountryDropdown({ setGuess, onSubmit, value = "" }) {
   const [query, setQuery] = useState(value);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,11 +41,20 @@ export default function CountryDropdown({ setGuess, value = "" }) {
   };
 
   const handleKeyDown = (e) => {
-    if (!showDropdown || results.length === 0) {
-      if (e.key === "Tab" && results.length > 0) {
-        e.preventDefault();
-        selectCountry(results[0]);
+    if (!showDropdown) {
+      if (results.length === 0) return;
+
+      switch (e.key) {
+        case "Tab":
+          e.preventDefault();
+          selectCountry(results[0]);
+          break;
+        case "Enter":
+          console.log("hi");
+          onSubmit();
+          break;
       }
+
       return;
     }
 
