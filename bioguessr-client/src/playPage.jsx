@@ -58,6 +58,7 @@ export default function PlayPage() {
       } else {
         game.submitWrong("Not quite.");
       }
+      setGuess("");
     }
   };
 
