@@ -137,6 +137,6 @@ export default function DailyPage() {
         score={score}
         onClose={() => setRoundOver(false)}
       />
-    </>
+      </>
   );
 }

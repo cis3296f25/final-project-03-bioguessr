@@ -24,7 +24,7 @@ export default function LeaderboardDisplay({ open, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-display" onClick={(e) => e.stopPropagation()}>
         <h2>Leaderboard</h2>
 
         <table style={{ width: "100%", marginTop: "1rem" }}>

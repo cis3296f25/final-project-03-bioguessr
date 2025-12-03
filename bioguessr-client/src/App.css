@@ -1,4 +1,3 @@
-
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -743,6 +742,9 @@ body {
   line-height: 1.5;
   color: #fff;
   font-weight: 500;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .regions-list {

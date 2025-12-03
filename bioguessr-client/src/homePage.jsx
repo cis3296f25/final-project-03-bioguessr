@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
-import logoSquare from '../assets/logos/logosquare.webp'; 
+import logoRect from '../assets/logos/logorect.webp'; 
 import bgImage from '../assets/homePageBG.png'; 
 import LeaderboardToggle from './LeaderboardToggle';
 
@@ -42,11 +42,11 @@ function HomePage() {
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']");
     if (link) {
-      link.href = logoSquare;
+      link.href = logoRect;
     } else {
       const newLink = document.createElement('link');
       newLink.rel = 'icon';
-      newLink.href = logoSquare;
+      newLink.href = logoRect;
       document.head.appendChild(newLink);
     }
   }, []);
@@ -55,17 +55,13 @@ function HomePage() {
     <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
       <div className="overlay">
         <div className="home-modern">
-          {/* Hero */}
           <div className="hero-section">
-            <img src={logoSquare} alt="BioGuessr" className="hero-logo" />
             <h1 className="hero-title">
-              <span className="text-bio">Bio</span>
-              <span className="text-guessr">Guessr</span>
+              <img src={logoRect} alt="BioGuessr" height="200" width="400"/>
             </h1>
             <p className="hero-subtitle">Test your wildlife knowledge across the globe</p>
           </div>
 
-          {/* Mode Selection */}
           <div className="modes-row">
             {GAME_MODES.map((mode) => (
               <button
@@ -85,7 +81,6 @@ function HomePage() {
             ))}
           </div>
 
-          {/* Actions Row */}
           <div className="actions-row">
             <button className="featured-action" onClick={() => navigate('/daily')}>
               <div className="featured-action-left">
@@ -99,7 +94,6 @@ function HomePage() {
             </button>
           </div>
 
-          {/* Footer Links */}
           <div className="home-footer">
             <LeaderboardToggle />
             <button className="link-btn" onClick={() => setShowRules(true)}>
@@ -108,7 +102,6 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Rules Modal */}
         {showRules && (
           <div className="modal-overlay" onClick={() => setShowRules(false)}>
             <div className="modal-content rules-modal" onClick={(e) => e.stopPropagation()}>
