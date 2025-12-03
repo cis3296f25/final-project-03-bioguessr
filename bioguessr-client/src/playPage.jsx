@@ -1,148 +1,168 @@
-import { useMemo, useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
-import CountryDropdown from './FuzzySearch.jsx'
+import { useLocation, useNavigate } from "react-router-dom";
+import useGameState from "./hooks/useGameState.js";
+import useBeastMode from "./hooks/useBeastMode.js";
+import useEasyMode from "./hooks/useEasyMode.js";
+import GameLayout from "./components/GameLayout.jsx";
+import GameHeader from "./components/GameHeader.jsx";
+import GameImage from "./components/GameImage.jsx";
+import AnimalInfo from "./components/AnimalInfo.jsx";
+import GuessInput from "./components/GuessInput.jsx";
+import AnswerReveal from "./components/AnswerReveal.jsx";
+import HintDisplay from "./components/HintDisplay.jsx";
+import LoadingScreen from "./components/LoadingScreen.jsx";
+import ErrorScreen from "./components/ErrorScreen.jsx";
+import GameOverScreen from "./components/GameOverScreen.jsx";
+import "./App.css";
 
-// Demo data for now. Replace with API later.
-const DEMO_ANIMALS = [
-    { name: "Tiger", imageUrl: "https://placehold.co/600x360?text=Tiger" },
-    { name: "Penguin", imageUrl: "https://placehold.co/600x360?text=Penguin" },
-    { name: "Red Panda", imageUrl: "https://placehold.co/600x360?text=Red+Panda" },
-    { name: "Blue Whale", imageUrl: "https://placehold.co/600x360?text=Blue+Whale" },
-];
+const TOTAL_ROUNDS = 4;
+
+function useGameMode() {
+  const { search } = useLocation();
+  const modeParam = new URLSearchParams(search).get("mode");
+  if (modeParam === "easy") return "easy";
+  if (modeParam === "beast") return "beast";
+  return "normal";
+}
 
 export default function PlayPage() {
-    const [round, setRound] = useState(1);
-    const [score, setScore] = useState(0);
-    const [guess, setGuess] = useState("");
-    const [current, setCurrent] = useState(null);
-    const [locked, setLocked] = useState(false);
-    const [feedback, setFeedback] = useState("");
-    const navigate = useNavigate();
+  const mode = useGameMode();
+  const isEasy = mode === "easy";
+  const isBeast = mode === "beast";
+  const navigate = useNavigate();
 
-    const totalRounds = DEMO_ANIMALS.length;
-    const options = useMemo(() => DEMO_ANIMALS.map(a => a.name), []);
+  const game = useGameState({
+    endpoint: "/api/play",
+    totalRounds: isBeast ? null : TOTAL_ROUNDS,
+  });
 
-    const gameOver = round > totalRounds;
+  const beast = useBeastMode(game, { enabled: isBeast });
+  const easy = useEasyMode(game, { enabled: isEasy });
 
-    useEffect(() => {
-        const getNextAnimal = async () => {
-            if (gameOver) return;
+  const isGameOver = game.isGameOver || beast.isDead;
 
-            const res = await fetch("/api/play");
-            const nextAnimal = await res.json();
+  const handleSubmitGuess = () => {
+    const correct = game.checkGuess();
+    if (correct === null) return;
 
-            setCurrent(nextAnimal);
-        }
-        getNextAnimal();
-    }, [round, gameOver]);
-
-    if (gameOver) {
-        return (
-            <div style={{ padding: 16 }}>
-                <h2>Game Over</h2>
-                <p>Final score: <strong>{score}</strong></p>
-                <button onClick={() => navigate('/')}>Back To Home</button>
-            </div>
-        );
+    if (correct) {
+      if (isBeast) {
+        beast.handleCorrectGuess();
+      } else {
+        game.submitCorrect(100, "Correct! +100");
+      }
+    } else {
+      if (isBeast) {
+        beast.handleWrongGuess();
+      } else if (isEasy) {
+        easy.handleWrongGuess();
+      } else {
+        game.submitWrong("Not quite.");
+      }
+      setGuess("");
     }
-    if (!current) {
-        return <div style={{ padding: 16 }}>Loading animal for Round {round}...</div>;
-    }
+  };
 
+  const handleExit = () => navigate("/");
 
-    function submitGuess() {
-        if (!current || !guess || locked) return;
+  let modeLabel = "Normal";
+  if (isBeast) modeLabel = "BEAST MODE";
+  if (isEasy) modeLabel = "Easy";
 
-        const correct = guess.toLowerCase() === current.name.toLowerCase();
-
-        if (correct) setScore(s => s + 100);
-        setLocked(true);
-        setFeedback(correct ?
-            "Correct! +100" :
-            `Not quite — it was ${current.name}.`
-        );
-    }
-
-    function nextRound() {
-        setGuess("");
-        setLocked(false);
-        setFeedback("");
-        setRound(r => r + 1);
-    }
-
-    function restart() {
-        navigate('/');
-    };
-
+  if (isGameOver) {
     return (
-        <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-            <header style={{ display: "flex", gap: 16, justifyContent: "space-between", alignItems: "center", marginBottom: 24, borderBottom: "1px solid #eee", paddingBottom: 16 }}>
-                <img src={"../assets/logos/logorect.webp"} style={{ width: '30%', minWidth: 150, height: 'auto' }} alt="Logo" />
-                <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: 12 }}>
-                        <div><strong>Score:</strong> {score}</div>
-                        <div><strong>Round:</strong> {round} / {totalRounds}</div>
-                    </div>
-                    <button onClick={restart}>
-                        Back To Home
-                    </button>
-                </div>
-            </header>
-
-            <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-
-                <div style={{ flex: 1.5, minWidth: 0 }}>
-                    <img
-                        src={current.imageUrl}
-                        alt="Animal to guess"
-                        style={{
-                            width: "100%",
-                            height: "auto",
-                            maxHeight: "500px",
-                            objectFit: "contain",
-                            borderRadius: 8,
-                            border: "1px solid #ddd",
-                            backgroundColor: "#f9f9f9"
-                        }}
-                    />
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-
-                    <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontSize: 14, color: "#666" }}>Animal Name</div>
-                        <div style={{ fontSize: 28, fontWeight: 700, minHeight: 36 }}>
-                            {locked ? current.name : "?"}
-                        </div>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <CountryDropdown setGuess={setGuess}>
-
-                        </CountryDropdown>
-
-                        <button
-                            onClick={submitGuess}
-                            disabled={!guess || locked}
-                            style={{ padding: 12, fontSize: 16, fontWeight: 'bold' }}
-                        >
-                            Submit Guess
-                        </button>
-
-                        <button
-                            onClick={nextRound}
-                            disabled={!locked}
-                            style={{ padding: 12, fontSize: 16 }}
-                        >
-                            Next Round
-                        </button>
-                    </div>
-
-                    <p style={{ minHeight: 24, marginTop: 16, fontSize: 18, fontWeight: 500 }}>
-                        {feedback}
-                    </p>
-                </div>
-            </div>
-        </div>
+      <GameOverScreen
+        title={beast.isDead ? "DEFEATED" : "Game Over"}
+        subtitle={beast.isDead ? "You ran out of lives." : "All rounds completed."}
+        score={game.score}
+        extraStats={isBeast && <div>Highest Streak: <strong>{beast.streak}</strong></div>}
+        onGoHome={handleExit}
+        titleColor={beast.isDead ? '#ff5252' : '#4caf50'}
+      />
     );
-};
+  }
+
+  if (game.error) {
+    return (
+      <ErrorScreen
+        title="Couldn't load the next animal."
+        onButtonClick={() => game.nextRound()}
+        buttonText="Retry"
+      />
+    );
+  }
+
+  if (game.loading || !game.current) {
+    return <LoadingScreen message={`Loading Round ${game.round}...`} />;
+  }
+
+  const imgSrc = game.current.image_url || game.current.imageUrl || "";
+
+  return (
+    <GameLayout>
+      <GameHeader
+        stats={
+          <>
+            <div>Score: <span style={{ color: '#4caf50', fontWeight: 'bold' }}>{game.score}</span></div>
+            {isBeast ? (
+              <>
+                <div>Round: {game.round}</div>
+                <div><span style={{ color: '#ff5252', fontWeight: 'bold' }}>{modeLabel}</span></div>
+                <div>Lives: {Array(beast.lives).fill("❤️").join("")}</div>
+                <div>Streak: x{beast.streak}</div>
+                <div style={{ fontWeight: 'bold', color: beast.timerColor, minWidth: '60px' }}>
+                  {beast.timeLeft != null ? beast.timeLeft.toFixed(1) + "s" : "--"}
+                </div>
+              </>
+            ) : (
+              <>
+                <div>Round: {game.round} / {game.totalRounds}</div>
+                <div>Mode: <span style={{ color: isEasy ? '#4caf50' : '#2196f3' }}>{modeLabel}</span></div>
+              </>
+            )}
+          </>
+        }
+        onExit={handleExit}
+      />
+
+      <div className="game-layout">
+        <GameImage
+          src={imgSrc}
+          feedback={game.feedback}
+          wrapperStyle={isBeast ? { border: '2px solid ' + beast.timerColor } : {}}
+          imageStyle={isBeast ? { transform: `scale(${beast.zoomScale})`, transition: 'transform 0.1s linear' } : {}}
+        />
+
+        <div className="game-controls-section">
+          <AnimalInfo
+            scientificName={game.current.scientificName}
+            commonName={game.current.name}
+            revealed={game.locked}
+          />
+
+          <HintDisplay
+            show={isEasy && !game.locked}
+            hints={[
+              { visible: easy.wrongGuesses >= 1, text: easy.hint1 },
+              { visible: easy.wrongGuesses >= 2, text: easy.hint2 },
+            ]}
+          />
+
+          {game.locked ? (
+            <AnswerReveal
+              countries={game.current.countries}
+              onNextRound={game.nextRound}
+              showNextButton={!isBeast}
+            />
+          ) : (
+            <GuessInput
+              onGuessChange={game.setGuess}
+              onSubmit={handleSubmitGuess}
+              disabled={!game.guess?.trim()}
+              value={game.guess}
+            />
+          )}
+        </div>
+      </div>
+    </GameLayout>
+  );
+}

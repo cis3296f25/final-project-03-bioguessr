@@ -1,38 +1,202 @@
 import express from "express";
-import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  CreateTableCommand,
+  QueryCommand
+} from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
-const { DynamoDBClient, ScanCommand } = require("@aws-sdk/client-dynamodb");
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-dotenv.config();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
+app.use(express.json()); 
+
 
 const client = new DynamoDBClient({
-  region: "us-east-1",
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.ACCESS_KEY_ID,
-    secretAccessKey: process.env.SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
-async function getRandomAnimal() {
-  const result = await client.send(new ScanCommand({ TableName: "animals" }));
-  const items = result.Items;
 
-  if (!items || items.length === 0) return null;
+// --- Load animals with characteristics (one-time) ---
+let ANIMALS = [];
+try {
+  const p = path.join(__dirname, "animal_data", "animals.json");
+  if (fs.existsSync(p)) {
+    const raw = fs.readFileSync(p, "utf8");
+    const data = JSON.parse(raw);
 
-  const randomIndex = Math.floor(Math.random() * items.length);
-  const item = items[randomIndex];
+    ANIMALS = (Array.isArray(data) ? data : []).filter(
+      (a) =>
+        a &&
+        a.name &&
+        a.characteristics &&
+        Object.keys(a.characteristics || {}).length > 0 &&
+        (a.image_url || a.imageUrl || a.local_image_path)
+    );
+    console.log(`[server] Loaded animals with characteristics: ${ANIMALS.length}`);
+  } else {
+    console.warn(`[server] Warning: animal_data/animals.json not found at ${p}`);
+  }
+} catch (err) {
+  console.error("[server] Failed to load animals.json:", err);
+}
 
+function normalizeAnimal(animal) {
   return {
-    name: item.name.S,
-    imageUrl: item.image_url.S,
+    name: animal.name,
+    scientificName: animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
+    imageUrl: animal.image_url || animal.imageUrl || animal.local_image_path || null,
+    characteristics: animal.characteristics || {},
+    countries: animal.locations || animal.countries || [], 
+    taxonomy: animal.taxonomy || {},
   };
 }
 
-app.get("/api/play", async (req, res) => {
-  res.send(await getRandomAnimal());
+function seedRandom(seed) {
+  return function() {
+    var t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function getDailySeed() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = now.getUTCDate().toString().padStart(2, '0');
+  return parseInt(`${year}${month}${day}`);
+}
+
+
+app.get("/api/play", (_req, res) => {
+  if (ANIMALS.length > 0) {
+    const animal = ANIMALS[(Math.random() * ANIMALS.length) | 0];
+    res.json(normalizeAnimal(animal));
+    return;
+  }
+
+  const demo = DEMO[(Math.random() * DEMO.length) | 0];
+  res.json(normalizeAnimal(demo));
 });
 
-app.listen(port, () => {
-  console.log(`app listening on port ${port}`);
+app.get("/api/daily", (_req, res) => {
+  let pool = ANIMALS.length > 0 ? ANIMALS : DEMO;
+  
+  const seed = getDailySeed();
+  const rng = seedRandom(seed);
+
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  const selected = shuffled.slice(0, 5);
+
+  const responseData = selected.map(normalizeAnimal);
+  
+  res.json(responseData);
 });
+
+app.get("/api/playButton", (_req, res) => res.send("Play"));
+app.get("/api/rulesButton", (_req, res) => res.send("Rules"));
+
+app.listen(PORT, () => {
+  console.log(`[server] listening on http://localhost:${PORT}`);
+});
+
+
+
+//POST request to upload a score to the leaderboard 
+app.post("/api/updateLeaderboard", async (req, res) => {
+  
+
+  console.log("BODY RECEIVED:", req.body);
+
+  const { initials, score } = req.body;
+
+  console.log("got here with: " + req.body);
+
+  if (!initials || score === undefined) { //validate input
+    return res.status(400).json({
+      error: "initials and score required",
+    });
+  }
+
+  try {
+    const item = {
+      id: uuidv4(), //unique key 
+      group: "LEADERBOARD", //group for sorting
+      initials: initials,
+      score: score,
+    };
+
+    const marshalledItem = marshall(item, {
+      removeUndefinedValues: true,
+    });
+
+    // Upload to DynamoDB 
+    await client.send(
+      new PutItemCommand({
+        TableName: process.env.LEADERBOARD_TABLE,
+        Item: marshalledItem,
+      })
+    );
+
+    console.log(`Inserted leaderboard row for: ${initials}`);
+    return res.json({ message: "Score added successfully" });
+  } catch (err) {
+    console.error("Error inserting leaderboard item:", err);
+    return res.status(500).json({ error: "Failed to insert score" });
+  }
+});
+
+//GET request to get the top ten in order from leaderboard
+app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
+  try {
+    const params = { //parameters for query to get top ten in order
+      TableName: process.env.LEADERBOARD_TABLE,
+      IndexName: "ScoreIndex",
+      KeyConditionExpression: "#g = :g",
+      ExpressionAttributeNames: {
+        "#g": "group"
+      },
+      ExpressionAttributeValues: {
+        ":g": { S: "LEADERBOARD" }
+      },
+      ProjectionExpression: "initials, score",
+      ScanIndexForward: false,
+      Limit: 10,
+    };
+
+    const data = await client.send(new QueryCommand(params)); //sending query
+
+    const leaderboard = data.Items.map(unmarshall);
+    res.json({ leaderboard }); //response
+  } catch (err) {
+    console.error("Error fetching leaderboard:", err);
+    res.status(500).json({ error: "Error fetching leaderboard" });
+  }
+});
+
+
+
+app.listen(PORT, () => {
+  console.log(`[server] listening on http://localhost:${PORT}`);
+});
+
+

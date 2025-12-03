@@ -1,91 +1,146 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Fuse from "fuse.js";
 
-const CountryDropdown = ({ setGuess }) => {
-    const [query, setQuery] = useState("");
-    const [countries, setCountries] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showDropdown, setShowDropdown] = useState(false);
+export default function CountryDropdown({ setGuess, onSubmit, value = "" }) {
+  const [query, setQuery] = useState(value);
+  const [countries, setCountries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef(null);
 
-    useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2");
-                const data = await res.json();
-                const normalized = data.map(c => ({
-                    name: c.name.common,
-                    code: c.cca2,
-                }));
-                setCountries(normalized);
-            } catch (err) {
-                console.error("Error fetching countries:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2");
+        const data = await res.json();
+        const normalized = data.map((c) => ({
+          name: c.name.common,
+          code: c.cca2,
+        })).sort((a, b) => a.name.localeCompare(b.name));
+        setCountries(normalized);
+      } catch (err) {
+        console.error("Error fetching countries:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-        fetchCountries();
-    }, []);
+  const fuse = useMemo(() => {
+    return new Fuse(countries, { keys: ["name", "code"], threshold: 0.3 });
+  }, [countries]);
 
-    const fuse = useMemo(() => {
-        return new Fuse(countries, {
-            keys: ["name", "code"],
-            threshold: 0.1,
-        });
-    }, [countries]);
+  const results = query ? fuse.search(query).slice(0, 8).map((r) => r.item) : [];
 
-    const results = query ? fuse.search(query).map(r => r.item) : [];
+  const selectCountry = (country) => {
+    setQuery(country.name);
+    setShowDropdown(false);
+    setGuess(country.name);
+    setSelectedIndex(0);
+  };
 
-    if (loading) return <p>Loading countries...</p>;
+  const handleKeyDown = (e) => {
+    if (!showDropdown) {
+      if (results.length === 0) return;
 
+      switch (e.key) {
+        case "Tab":
+          e.preventDefault();
+          selectCountry(results[0]);
+          break;
+        case "Enter":
+          onSubmit();
+          break;
+      }
+
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+        break;
+      case "Tab":
+      case "Enter":
+        e.preventDefault();
+        if (results[selectedIndex]) {
+          selectCountry(results[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        setShowDropdown(false);
+        break;
+    }
+  };
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  // Sync with external value (for reset between rounds)
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
+
+  if (loading) {
     return (
-        <div style={{ position: "relative" }}>
-            <input
-                type="text"
-                value={query}
-                onChange={e => {
-                    setQuery(e.target.value);
-                    setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 100)}
-                style={{ paddingTop: 10, paddingBottom: 10, textAlign: "center", fontSize: 16, width: "100%", boxSizing: "border-box" }}
-            />
-
-            {showDropdown && results.length > 0 && (
-                <ul
-                    style={{
-                        position: "absolute", top: "100%",
-                        left: 0,
-                        right: 0,
-                        width: "100%",
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        border: "1px solid #ccc",
-                        backgroundColor: "#2b2a33",
-                        margin: 0,
-                        padding: 0,
-                        listStyle: "none",
-                        zIndex: 1000,
-                    }}>
-                    {results.map(c => (
-                        <li
-                            key={c.code}
-                            style={{ padding: "5px", cursor: "pointer" }}
-                            onMouseDown={() => {
-                                setQuery(c.name);
-                                setShowDropdown(false);
-                                setGuess(c.name);
-                                console.log(c.name)
-                            }}
-                        >
-                            {c.name} ({c.code})
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+      <div className="country-input-wrapper">
+        <div className="country-input loading">Loading countries...</div>
+      </div>
     );
-};
+  }
 
-export default CountryDropdown;
+  return (
+    <div className="country-input-wrapper">
+      <input
+        ref={inputRef}
+        type="text"
+        className="country-input"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setShowDropdown(true);
+          setGuess(e.target.value);
+        }}
+        onFocus={() => setShowDropdown(true)}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+        onKeyDown={handleKeyDown}
+        placeholder="Type a country..."
+        autoComplete="off"
+        autoFocus
+      />
+
+      {query && results.length > 0 && (
+        <span className="tab-hint">Tab to complete</span>
+      )}
+
+      {showDropdown && results.length > 0 && (
+        <ul className="country-dropdown">
+          {results.map((c, i) => (
+            <li
+              key={c.code}
+              className={`country-option ${i === selectedIndex ? "selected" : ""}`}
+              onMouseDown={() => selectCountry(c)}
+              onMouseEnter={() => setSelectedIndex(i)}
+            >
+              <span className="country-name">{c.name}</span>
+              <span className="country-code">{c.code}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showDropdown && query && results.length === 0 && (
+        <div className="country-dropdown no-results">
+          No countries found
+        </div>
+      )}
+    </div>
+  );
+}
