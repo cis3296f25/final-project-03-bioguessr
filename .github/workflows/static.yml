@@ -37,30 +37,28 @@ jobs:
         run: bun install
         working-directory: bioguessr-client
 
-      # 4. Build the React app
-      - name: Build React app
-        run: bun run build
+      # 4. Build the React app and Add SPA fallback
+      - name: Build React app and Add SPA fallback
+        run: |
+          bun run build
+          cp dist/index.html dist/404.html
         working-directory: bioguessr-client
 
-      # 5. Copy index.html to 404.html for SPA routing
-      - name: Add SPA fallback for BrowserRouter
-        run: cp bioguessr-client/dist/index.html bioguessr-client/dist/404.html
-
-      # 6. Debug: list files to verify build
+      # 5. Debug: list files to verify build
       - name: List dist folder contents
         run: ls -R bioguessr-client/dist
 
-      # 7. Configure GitHub Pages
+      # 6. Configure GitHub Pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 8. Upload the dist folder
+      # 7. Upload the dist folder
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: bioguessr-client/dist
 
-      # 9. Deploy to GitHub Pages
+      # 8. Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
