@@ -43,6 +43,8 @@ jobs:
           bun run build
           cp dist/index.html dist/404.html
         working-directory: bioguessr-client
+        env: 
+           VITE_AWS_URL: ${{ secrets.VITE_AWS_URL }}
 
       # 5. Debug: list files to verify build
       - name: List dist folder contents
