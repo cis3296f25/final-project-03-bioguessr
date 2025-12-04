@@ -36,8 +36,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build React app
-        run: bun run build
+      - name: Build React app and Add SPA fallback
+        run: |
+          bun run build
+          cp dist/index.html dist/404.html
+        working-directory: bioguessr-client
+        env: 
+           VITE_AWS_URL: ${{ secrets.VITE_AWS_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
