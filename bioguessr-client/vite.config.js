@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/https://github.com/cis3296f25/final-project-03-bioguessr/tree/prod',
+    base: '/final-project-03-bioguessr/',
     server: {
       cors: {
         origin: env.AWS_URL,
