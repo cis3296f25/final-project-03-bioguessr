@@ -44,12 +44,21 @@ async function fetchRandomAnimalFromDB() {
     Limit: 20,
   };
 
+  console.log(`[server] Fetching from DynamoDB table: ${ANIMALS_TABLE}, segment: ${randomSegment}`);
+
   const data = await client.send(new ScanCommand(params));
-  const items = (data.Items || []).map(unmarshall).filter(isValidAnimal);
+  const rawItems = (data.Items || []).map(unmarshall);
+  const items = rawItems.filter(isValidAnimal);
+
+  console.log(`[server] Got ${rawItems.length} raw items, ${items.length} valid animals`);
 
   if (items.length > 0) {
-    return items[Math.floor(Math.random() * items.length)];
+    const animal = items[Math.floor(Math.random() * items.length)];
+    console.log(`[server] Returning animal: ${animal.name}`);
+    return animal;
   }
+
+  console.log("[server] No valid animals found in segment");
   return null;
 }
 
@@ -133,10 +142,12 @@ app.get("/api/play", async (_req, res) => {
     if (animal) {
       return res.json(normalizeAnimal(animal));
     }
+    console.log("[server] No animal from DB, falling back to DEMO");
   } catch (err) {
-    console.error("[server] Failed to fetch random animal:", err.message);
+    console.error("[server] Failed to fetch random animal:", err.message, err);
   }
 
+  console.log("[server] Using DEMO data");
   const demo = DEMO[(Math.random() * DEMO.length) | 0];
   res.json(normalizeAnimal(demo));
 });
