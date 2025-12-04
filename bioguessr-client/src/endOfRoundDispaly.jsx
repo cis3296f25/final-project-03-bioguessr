@@ -31,7 +31,7 @@ export default function PostRoundPopup({ open, onClose, score }) {
 
   //writes share message to user clipboard.
   const shareResult = async () => {
-    const shareText = `I got ${score} on the BioGuessr Daily!\n\nPlay here: http://eventually-our-url.com`;
+    const shareText = `I got ${score} on the BioGuessr Daily!\n\nPlay here: https://cis3296f25.github.io/final-project-03-bioguessr/`;
 
     try {
       await navigator.clipboard.writeText(shareText);
