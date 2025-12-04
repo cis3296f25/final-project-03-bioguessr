@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiUrl } from "./utils/api.js";
 
 export default function PostRoundPopup({ open, onClose, score }) {
   const [initials, setInitials] = useState("");
@@ -12,7 +13,7 @@ export default function PostRoundPopup({ open, onClose, score }) {
    //calls api endpoint to update leaderboard
   const submitScore = async () => {
     try {
-      const res = await fetch("/api/updateLeaderboard", {
+      const res = await fetch(apiUrl("/api/updateLeaderboard"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

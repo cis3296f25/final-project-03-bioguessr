@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiUrl } from "../utils/api.js";
 
 export default function useGameState({ endpoint, totalRounds = null }) {
   const [round, setRound] = useState(1);
@@ -20,7 +21,7 @@ export default function useGameState({ endpoint, totalRounds = null }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(endpoint);
+        const res = await fetch(apiUrl(endpoint));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         

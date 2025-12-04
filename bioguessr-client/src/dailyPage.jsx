@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from "./utils/api.js";
 import './App.css';
 import PostRoundPopup from "./endOfRoundDispaly.jsx";
 import GameLayout from "./components/GameLayout.jsx";
@@ -32,7 +33,7 @@ export default function DailyPage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/daily');
+        const res = await fetch(apiUrl('/api/daily'));
         if (!res.ok) throw new Error("Failed to load daily challenge.");
         setDailyAnimals(await res.json() || []);
         setError(null);
