@@ -73,13 +73,20 @@ const DEMO = [
   },
 ];
 
+function wrapImageUrl(url) {
+  if (!url) return null;
+  return `/api/image?url=${encodeURIComponent(url)}`;
+}
+
 function normalizeAnimal(animal) {
+  const rawImageUrl =
+    animal.image_url || animal.imageUrl || animal.local_image_path || null;
+
   return {
     name: animal.name,
     scientificName:
       animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
-    imageUrl:
-      animal.image_url || animal.imageUrl || animal.local_image_path || null,
+    imageUrl: wrapImageUrl(rawImageUrl),
     characteristics: animal.characteristics || {},
     countries: animal.locations || animal.countries || [],
     taxonomy: animal.taxonomy || {},
@@ -135,6 +142,39 @@ app.get("/api/daily", (_req, res) => {
 
 app.get("/api/playButton", (_req, res) => res.send("Play"));
 app.get("/api/rulesButton", (_req, res) => res.send("Rules"));
+
+app.get("/api/image", async (req, res) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: "Missing 'url' query parameter" });
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "BioGuessr/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Failed to fetch image" });
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType) {
+      res.setHeader("Content-Type", contentType);
+    }
+
+    res.setHeader("Cache-Control", "public, max-age=86400");
+
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error("[server] Image proxy error:", err.message);
+    res.status(500).json({ error: "Failed to fetch image" });
+  }
+});
 
 //POST request to upload a score to the leaderboard
 app.post("/api/updateLeaderboard", async (req, res) => {
