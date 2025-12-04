@@ -1,18 +1,13 @@
 import express from "express";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   DynamoDBClient,
   PutItemCommand,
   CreateTableCommand,
   QueryCommand,
+  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,32 +21,55 @@ const client = new DynamoDBClient({
   },
 });
 
-// --- Load animals with characteristics (one-time) ---
-let ANIMALS = [];
-try {
-  const p = path.join(__dirname, "animal_data", "animals.json");
-  if (fs.existsSync(p)) {
-    const raw = fs.readFileSync(p, "utf8");
-    const data = JSON.parse(raw);
+const ANIMALS_TABLE = process.env.ANIMALS_TABLE || "animals";
 
-    ANIMALS = (Array.isArray(data) ? data : []).filter(
-      (a) =>
-        a &&
-        a.name &&
-        a.characteristics &&
-        Object.keys(a.characteristics || {}).length > 0 &&
-        (a.image_url || a.imageUrl || a.local_image_path),
-    );
-    console.log(
-      `[server] Loaded animals with characteristics: ${ANIMALS.length}`,
-    );
-  } else {
-    console.warn(
-      `[server] Warning: animal_data/animals.json not found at ${p}`,
-    );
+function isValidAnimal(a) {
+  return (
+    a &&
+    a.name &&
+    a.characteristics &&
+    Object.keys(a.characteristics || {}).length > 0 &&
+    (a.image_url || a.imageUrl)
+  );
+}
+
+async function fetchRandomAnimalFromDB() {
+  const totalSegments = 10;
+  const randomSegment = Math.floor(Math.random() * totalSegments);
+
+  const params = {
+    TableName: ANIMALS_TABLE,
+    Segment: randomSegment,
+    TotalSegments: totalSegments,
+    Limit: 20,
+  };
+
+  const data = await client.send(new ScanCommand(params));
+  const items = (data.Items || []).map(unmarshall).filter(isValidAnimal);
+
+  if (items.length > 0) {
+    return items[Math.floor(Math.random() * items.length)];
   }
-} catch (err) {
-  console.error("[server] Failed to load animals.json:", err);
+  return null;
+}
+
+async function fetchAnimalsFromDB() {
+  const items = [];
+  let lastKey = undefined;
+
+  do {
+    const params = {
+      TableName: ANIMALS_TABLE,
+      ExclusiveStartKey: lastKey,
+    };
+
+    const data = await client.send(new ScanCommand(params));
+    const batch = (data.Items || []).map(unmarshall);
+    items.push(...batch);
+    lastKey = data.LastEvaluatedKey;
+  } while (lastKey);
+
+  return items.filter(isValidAnimal);
 }
 
 const DEMO = [
@@ -79,8 +97,7 @@ function wrapImageUrl(url) {
 }
 
 function normalizeAnimal(animal) {
-  const rawImageUrl =
-    animal.image_url || animal.imageUrl || animal.local_image_path || null;
+  const rawImageUrl = animal.image_url || animal.imageUrl || null;
 
   return {
     name: animal.name,
@@ -88,7 +105,7 @@ function normalizeAnimal(animal) {
       animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
     imageUrl: wrapImageUrl(rawImageUrl),
     characteristics: animal.characteristics || {},
-    countries: animal.locations || animal.countries || [],
+    countries: animal.country || animal.countries || animal.locations || [],
     taxonomy: animal.taxonomy || {},
   };
 }
@@ -110,19 +127,31 @@ function getDailySeed() {
   return parseInt(`${year}${month}${day}`);
 }
 
-app.get("/api/play", (_req, res) => {
-  if (ANIMALS.length > 0) {
-    const animal = ANIMALS[(Math.random() * ANIMALS.length) | 0];
-    res.json(normalizeAnimal(animal));
-    return;
+app.get("/api/play", async (_req, res) => {
+  try {
+    const animal = await fetchRandomAnimalFromDB();
+    if (animal) {
+      return res.json(normalizeAnimal(animal));
+    }
+  } catch (err) {
+    console.error("[server] Failed to fetch random animal:", err.message);
   }
 
   const demo = DEMO[(Math.random() * DEMO.length) | 0];
   res.json(normalizeAnimal(demo));
 });
 
-app.get("/api/daily", (_req, res) => {
-  let pool = ANIMALS.length > 0 ? ANIMALS : DEMO;
+app.get("/api/daily", async (_req, res) => {
+  let pool = DEMO;
+
+  try {
+    const animals = await fetchAnimalsFromDB();
+    if (animals.length > 0) {
+      pool = animals;
+    }
+  } catch (err) {
+    console.error("[server] Failed to fetch animals for daily:", err.message);
+  }
 
   const seed = getDailySeed();
   const rng = seedRandom(seed);
@@ -134,7 +163,6 @@ app.get("/api/daily", (_req, res) => {
   }
 
   const selected = shuffled.slice(0, 5);
-
   const responseData = selected.map(normalizeAnimal);
 
   res.json(responseData);
@@ -146,6 +174,8 @@ app.get("/api/rulesButton", (_req, res) => res.send("Rules"));
 app.get("/api/image", async (req, res) => {
   const { url } = req.query;
 
+  console.log("[server] Image proxy request for:", url);
+
   if (!url) {
     return res.status(400).json({ error: "Missing 'url' query parameter" });
   }
@@ -153,16 +183,22 @@ app.get("/api/image", async (req, res) => {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer": new URL(url).origin + "/",
+        Referer: new URL(url).origin + "/",
       },
     });
 
     if (!response.ok) {
-      console.error(`[server] Image fetch failed: ${response.status} for ${url}`);
-      return res.status(response.status).json({ error: "Failed to fetch image" });
+      console.error(
+        `[server] Image fetch failed: ${response.status} for ${url}`,
+      );
+      return res
+        .status(response.status)
+        .json({ error: "Failed to fetch image" });
     }
 
     const contentType = response.headers.get("content-type");
