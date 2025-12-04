@@ -1,18 +1,26 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import dotenv from "dotenv";
 
-dotenv.config();
+// https://vite.dev/config/
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '.', '');
 
-export default defineConfig({
-  plugins: [react()],
-  base: process.env.VITE_BASE_PATH || "/",
-  server: {
-    proxy: {
-      "/api": {
-        target: process.env.AWS_URL,
-        changeOrigin: true,
+  return {
+    plugins: [react()],
+    base: '/https://github.com/cis3296f25/final-project-03-bioguessr/tree/prod',
+    server: {
+      cors: {
+        origin: env.AWS_URL,
+      },
+      proxy: {
+        '/api': {
+          target: env.AWS_URL || 'http://localhost:3000',
+          changeOrigin: true,
+        },
       },
     },
-  },
+    build: {
+      manifest: true,
+    },
+  };
 });
