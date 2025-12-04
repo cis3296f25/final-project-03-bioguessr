@@ -6,19 +6,17 @@ import {
   DynamoDBClient,
   PutItemCommand,
   CreateTableCommand,
-  QueryCommand
+  QueryCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(express.json()); 
-
+app.use(express.json());
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION,
@@ -27,7 +25,6 @@ const client = new DynamoDBClient({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
-
 
 // --- Load animals with characteristics (one-time) ---
 let ANIMALS = [];
@@ -43,44 +40,68 @@ try {
         a.name &&
         a.characteristics &&
         Object.keys(a.characteristics || {}).length > 0 &&
-        (a.image_url || a.imageUrl || a.local_image_path)
+        (a.image_url || a.imageUrl || a.local_image_path),
     );
-    console.log(`[server] Loaded animals with characteristics: ${ANIMALS.length}`);
+    console.log(
+      `[server] Loaded animals with characteristics: ${ANIMALS.length}`,
+    );
   } else {
-    console.warn(`[server] Warning: animal_data/animals.json not found at ${p}`);
+    console.warn(
+      `[server] Warning: animal_data/animals.json not found at ${p}`,
+    );
   }
 } catch (err) {
   console.error("[server] Failed to load animals.json:", err);
 }
 
+const DEMO = [
+  {
+    name: "Krill",
+    scientificName: "Euphausiacea",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Krill_anatomy.jpg/1200px-Krill_anatomy.jpg",
+    countries: ["Antarctica", "Ocean"],
+    characteristics: { diet: "Plankton" },
+  },
+  {
+    name: "Beaglier",
+    scientificName: "Canis lupus familiaris",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Beaglier_puppy.jpg/800px-Beaglier_puppy.jpg",
+    countries: ["Australia"],
+    characteristics: { diet: "Omnivore" },
+  },
+];
+
 function normalizeAnimal(animal) {
   return {
     name: animal.name,
-    scientificName: animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
-    imageUrl: animal.image_url || animal.imageUrl || animal.local_image_path || null,
+    scientificName:
+      animal.scientific_name || animal.taxonomy?.scientific_name || animal.name,
+    imageUrl:
+      animal.image_url || animal.imageUrl || animal.local_image_path || null,
     characteristics: animal.characteristics || {},
-    countries: animal.locations || animal.countries || [], 
+    countries: animal.locations || animal.countries || [],
     taxonomy: animal.taxonomy || {},
   };
 }
 
 function seedRandom(seed) {
-  return function() {
-    var t = seed += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  }
+  return function () {
+    var t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 function getDailySeed() {
   const now = new Date();
   const year = now.getUTCFullYear();
-  const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-  const day = now.getUTCDate().toString().padStart(2, '0');
+  const month = (now.getUTCMonth() + 1).toString().padStart(2, "0");
+  const day = now.getUTCDate().toString().padStart(2, "0");
   return parseInt(`${year}${month}${day}`);
 }
-
 
 app.get("/api/play", (_req, res) => {
   if (ANIMALS.length > 0) {
@@ -95,7 +116,7 @@ app.get("/api/play", (_req, res) => {
 
 app.get("/api/daily", (_req, res) => {
   let pool = ANIMALS.length > 0 ? ANIMALS : DEMO;
-  
+
   const seed = getDailySeed();
   const rng = seedRandom(seed);
 
@@ -108,30 +129,23 @@ app.get("/api/daily", (_req, res) => {
   const selected = shuffled.slice(0, 5);
 
   const responseData = selected.map(normalizeAnimal);
-  
+
   res.json(responseData);
 });
 
 app.get("/api/playButton", (_req, res) => res.send("Play"));
 app.get("/api/rulesButton", (_req, res) => res.send("Rules"));
 
-app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
-});
-
-
-
-//POST request to upload a score to the leaderboard 
+//POST request to upload a score to the leaderboard
 app.post("/api/updateLeaderboard", async (req, res) => {
-  
-
   console.log("BODY RECEIVED:", req.body);
 
   const { initials, score } = req.body;
 
   console.log("got here with: " + req.body);
 
-  if (!initials || score === undefined) { //validate input
+  if (!initials || score === undefined) {
+    //validate input
     return res.status(400).json({
       error: "initials and score required",
     });
@@ -139,7 +153,7 @@ app.post("/api/updateLeaderboard", async (req, res) => {
 
   try {
     const item = {
-      id: uuidv4(), //unique key 
+      id: uuidv4(), //unique key
       group: "LEADERBOARD", //group for sorting
       initials: initials,
       score: score,
@@ -149,12 +163,12 @@ app.post("/api/updateLeaderboard", async (req, res) => {
       removeUndefinedValues: true,
     });
 
-    // Upload to DynamoDB 
+    // Upload to DynamoDB
     await client.send(
       new PutItemCommand({
         TableName: process.env.LEADERBOARD_TABLE,
         Item: marshalledItem,
-      })
+      }),
     );
 
     console.log(`Inserted leaderboard row for: ${initials}`);
@@ -168,15 +182,16 @@ app.post("/api/updateLeaderboard", async (req, res) => {
 //GET request to get the top ten in order from leaderboard
 app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
   try {
-    const params = { //parameters for query to get top ten in order
+    const params = {
+      //parameters for query to get top ten in order
       TableName: process.env.LEADERBOARD_TABLE,
       IndexName: "ScoreIndex",
       KeyConditionExpression: "#g = :g",
       ExpressionAttributeNames: {
-        "#g": "group"
+        "#g": "group",
       },
       ExpressionAttributeValues: {
-        ":g": { S: "LEADERBOARD" }
+        ":g": { S: "LEADERBOARD" },
       },
       ProjectionExpression: "initials, score",
       ScanIndexForward: false,
@@ -193,10 +208,4 @@ app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
   }
 });
 
-
-
-app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
-});
-
-
+app.listen(PORT);
