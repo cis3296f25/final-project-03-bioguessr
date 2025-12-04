@@ -5,12 +5,10 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import fs from "fs";
-import dotenv from "dotenv";
 
-dotenv.config();
 const client = new DynamoDBClient({
-   region: process.env.AWS_REGION,
-   credentials: {
+  region: process.env.AWS_REGION,
+  credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
@@ -47,7 +45,7 @@ for (const item of data) {
         image_url: item.image_url,
         taxonomy: item.taxonomy,
         country: item.countries,
-        characteristics: item.characteristics
+        characteristics: item.characteristics,
       },
       { removeUndefinedValues: true },
     );
