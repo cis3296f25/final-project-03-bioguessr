@@ -44,13 +44,17 @@ async function fetchRandomAnimalFromDB() {
     Limit: 20,
   };
 
-  console.log(`[server] Fetching from DynamoDB table: ${ANIMALS_TABLE}, segment: ${randomSegment}`);
+  console.log(
+    `[server] Fetching from DynamoDB table: ${ANIMALS_TABLE}, segment: ${randomSegment}`,
+  );
 
   const data = await client.send(new ScanCommand(params));
   const rawItems = (data.Items || []).map(unmarshall);
   const items = rawItems.filter(isValidAnimal);
 
-  console.log(`[server] Got ${rawItems.length} raw items, ${items.length} valid animals`);
+  console.log(
+    `[server] Got ${rawItems.length} raw items, ${items.length} valid animals`,
+  );
 
   if (items.length > 0) {
     const animal = items[Math.floor(Math.random() * items.length)];
@@ -101,8 +105,7 @@ const DEMO = [
 ];
 
 function wrapImageUrl(url) {
-  if (!url) return null;
-  return `/api/image?url=${encodeURIComponent(url)}`;
+  return url || null;
 }
 
 function normalizeAnimal(animal) {
