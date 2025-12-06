@@ -14,10 +14,9 @@ export default function LeaderboardDisplay({ open, onClose }) {
     try {
       const res = await fetch(apiUrl("/api/getTopTenFromLeaderboard"));
       const data = await res.json();
-      console.log(data);
       setLeaderboard(data.leaderboard || []);
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error fetching leaderboard:", err);
     }
   };
 

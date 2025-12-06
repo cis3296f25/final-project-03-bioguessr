@@ -1,4 +1,9 @@
 {
+  "name": "bioguessr-server",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.916.0",
     "@aws-sdk/util-dynamodb": "^3.916.0",

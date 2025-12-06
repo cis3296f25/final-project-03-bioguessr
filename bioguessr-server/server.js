@@ -230,16 +230,10 @@ app.get("/api/image", async (req, res) => {
   }
 });
 
-//POST request to upload a score to the leaderboard
 app.post("/api/updateLeaderboard", async (req, res) => {
-  console.log("BODY RECEIVED:", req.body);
-
   const { initials, score } = req.body;
 
-  console.log("got here with: " + req.body);
-
   if (!initials || score === undefined) {
-    //validate input
     return res.status(400).json({
       error: "initials and score required",
     });
@@ -247,8 +241,8 @@ app.post("/api/updateLeaderboard", async (req, res) => {
 
   try {
     const item = {
-      id: uuidv4(), //unique key
-      group: "LEADERBOARD", //group for sorting
+      id: uuidv4(),
+      group: "LEADERBOARD",
       initials: initials,
       score: score,
     };
@@ -257,7 +251,6 @@ app.post("/api/updateLeaderboard", async (req, res) => {
       removeUndefinedValues: true,
     });
 
-    // Upload to DynamoDB
     await client.send(
       new PutItemCommand({
         TableName: process.env.LEADERBOARD_TABLE,
@@ -273,11 +266,9 @@ app.post("/api/updateLeaderboard", async (req, res) => {
   }
 });
 
-//GET request to get the top ten in order from leaderboard
 app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
   try {
     const params = {
-      //parameters for query to get top ten in order
       TableName: process.env.LEADERBOARD_TABLE,
       IndexName: "ScoreIndex",
       KeyConditionExpression: "#g = :g",
@@ -292,10 +283,9 @@ app.get("/api/getTopTenFromLeaderboard", async (req, res) => {
       Limit: 10,
     };
 
-    const data = await client.send(new QueryCommand(params)); //sending query
-
+    const data = await client.send(new QueryCommand(params));
     const leaderboard = data.Items.map(unmarshall);
-    res.json({ leaderboard }); //response
+    res.json({ leaderboard });
   } catch (err) {
     console.error("Error fetching leaderboard:", err);
     res.status(500).json({ error: "Error fetching leaderboard" });

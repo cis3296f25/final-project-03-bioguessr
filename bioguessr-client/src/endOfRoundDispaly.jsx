@@ -8,9 +8,8 @@ export default function PostRoundPopup({ open, onClose, score }) {
   const [copyMsg, setCopyMsg] = useState("");
   const navigate = useNavigate();
 
-  if (!open) return null; //dont display if not ready
+  if (!open) return null;
 
-   //calls api endpoint to update leaderboard
   const submitScore = async () => {
     try {
       const res = await fetch(apiUrl("/api/updateLeaderboard"), {
@@ -30,7 +29,6 @@ export default function PostRoundPopup({ open, onClose, score }) {
     }
   };
 
-  //writes share message to user clipboard.
   const shareResult = async () => {
     const shareText = `I got ${score} on the BioGuessr Daily!\n\nPlay here: https://cis3296f25.github.io/final-project-03-bioguessr/`;
 
