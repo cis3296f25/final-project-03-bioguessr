@@ -6,14 +6,19 @@ import PlayPage from './playPage.jsx'
 import DailyPage from './dailyPage.jsx'
 import './App.css'
 
+const basename = import.meta.env.BASE_URL
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/play" element={<PlayPage />} />
-        <Route path="/daily" element={<DailyPage />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>,
+    <React.StrictMode>
+        <BrowserRouter
+            basename={basename}
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/play" element={<PlayPage />} />
+                <Route path="/daily" element={<DailyPage />} />
+            </Routes>
+        </BrowserRouter>
+    </React.StrictMode>,
 )

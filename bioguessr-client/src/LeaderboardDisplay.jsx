@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "./utils/api.js";
 import './App.css';
 
 export default function LeaderboardDisplay({ open, onClose }) {
@@ -11,12 +12,11 @@ export default function LeaderboardDisplay({ open, onClose }) {
 
   const fetchLeaderboard = async () => {
     try {
-      const res = await fetch("/api/getTopTenFromLeaderboard");
+      const res = await fetch(apiUrl("/api/getTopTenFromLeaderboard"));
       const data = await res.json();
-      console.log(data);
       setLeaderboard(data.leaderboard || []);
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error fetching leaderboard:", err);
     }
   };
 
