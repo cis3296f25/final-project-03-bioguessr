@@ -1,0 +1,66 @@
+name: Deploy React App to GitHub Pages (Bun + Vite + SPA)
+
+on:
+  push:
+    branches: ["prod"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Bun
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: bun install
+        working-directory: bioguessr-client
+
+      # 4. Build the React app and Add SPA fallback
+      - name: Build React app and Add SPA fallback
+        run: |
+          bun run build
+          cp dist/index.html dist/404.html
+        working-directory: bioguessr-client
+        env: 
+           VITE_AWS_URL: ${{ secrets.VITE_AWS_URL }}
+
+      # 5. Debug: list files to verify build
+      - name: List dist folder contents
+        run: ls -R bioguessr-client/dist
+
+      # 6. Configure GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # 7. Upload the dist folder
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: bioguessr-client/dist
+
+      # 8. Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
